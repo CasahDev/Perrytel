@@ -1,7 +1,18 @@
 # Perrytel
 Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des information sur un minitel 1b
 
+## Features
+- [ ] Intéruptions
+- [ ] Timers
+- [ ] Mailbox
+- [ ] EMMC/SD Host
+- [ ] Drivers clavier minitel
+- [ ] Multi processes
+- [ ] Système de fichiers
+- [ ] Drivers ethernets
+ 
 ## Arborescence de fichiers
+```
 Perrytel/
  ├── arch/
  │   └── aarch64/          # Code spécifique au processeur (Boot, Linker)
@@ -12,3 +23,9 @@ Perrytel/
  ├── kernel/               # Logique de l'OS (Architecture-indépendante)
  │   └── main.c
  └── build.sh              # Script de build mis à jour
+```
+
+## Format des commits:
+- 🤖: Patch de bugs
+- 💫: Ajout de features
+- 🧾: Ajout de documentation
