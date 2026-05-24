@@ -1,0 +1,5 @@
+build/boot.o
+build/kernel.o
+build/kernel8.elf
+build/kernel8.img
+build/uart.o
