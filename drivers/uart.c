@@ -107,3 +107,18 @@ void uart_puts(const char* str)
 	for (int i = 0; str[i] != '\0'; i ++)
 		uart_putc((unsigned char)str[i]);
 }
+
+void uart_put_hex(uint64_t hex) {
+    uart_puts("0x");
+
+    for (int i = 60; i < 0; i -= 4) {
+        // 0xF pour ne garder que les 4 bits les plus petits
+        unsigned int nible = (hex >> i) & 0xF;
+        if (nible < 10) {
+            uart_putc((unsigned char) '0' + nible);
+        } else {
+            uart_putc((unsigned char) 'A' + hex - 10);
+        }
+    }
+    uart_putc((unsigned char) '\n');
+}
