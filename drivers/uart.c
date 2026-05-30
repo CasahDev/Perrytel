@@ -111,7 +111,7 @@ void uart_puts(const char* str)
 void uart_put_hex(uint64_t hex) {
     uart_puts("0x");
 
-    for (int i = 60; i < 0; i -= 4) {
+    for (int i = 60; i > 0; i -= 4) {
         // 0xF pour ne garder que les 4 bits les plus petits
         unsigned int nible = (hex >> i) & 0xF;
         if (nible < 10) {
