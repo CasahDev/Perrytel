@@ -60,26 +60,52 @@
 
 .globl vectors
 vectors:
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
+    ventry sync_invalid_el1t
+    ventry irq_invalid_el1t
+    ventry fiq_invalid_el1t
+    ventry error_invalid_el1t
+    ventry sync_invalid_el1h
     ventry irq_handler_el1h
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
-    ventry invalid_entry
+    ventry fiq_invalid_el1h
+    ventry error_invalid_el1h
+    ventry sync_invalid_el0_64
+    ventry irq_invalid_el0_64
+    ventry fiq_invalid_el0_64
+    ventry error_invalid_el0_64
+    ventry sync_invalid_el0_32
+    ventry irq_invalid_el0_32
+    ventry fiq_invalid_el0_32
+    ventry error_invalid_el0_32
 
 // Default handlers for exceptions. These will just loop indefinitely, but you can replace them with something more useful if you want.
-invalid_entry:
-    b invalid_entry
+.macro handle_invalid_entry type
+    mov x0, #\type
+    mrs x1, esr_el2
+    mrs x2, elr_el2
+    bl show_invalid_entry_message
+    b .
+.endm
+
+sync_invalid_el1t:   handle_invalid_entry 0
+irq_invalid_el1t:    handle_invalid_entry 1
+fiq_invalid_el1t:    handle_invalid_entry 2
+error_invalid_el1t:  handle_invalid_entry 3
+
+sync_invalid_el1h:   handle_invalid_entry 4
+// irq_handler_el1h est défini plus bas
+fiq_invalid_el1h:    handle_invalid_entry 6
+error_invalid_el1h:  handle_invalid_entry 7
+
+sync_invalid_el0_64:  handle_invalid_entry 8
+irq_invalid_el0_64:   handle_invalid_entry 9
+fiq_invalid_el0_64:   handle_invalid_entry 10
+error_invalid_el0_64: handle_invalid_entry 11
+
+sync_invalid_el0_32:  handle_invalid_entry 12
+irq_invalid_el0_32:   handle_invalid_entry 13
+fiq_invalid_el0_32:   handle_invalid_entry 14
+error_invalid_el0_32: handle_invalid_entry 15
 
 irq_handler_el1h:
-    b irq_handler_el1h
+    bl irq_handler
+    kernel_exit
