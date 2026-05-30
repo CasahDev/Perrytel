@@ -34,7 +34,7 @@ _start:
     b.gt    2b
 
     ldr     x0, =vectors // Charge l''adresse de ta table
-    msr    vbar_el1, x0 // Donne l''adresse au registre système VBAR_EL1
+    msr    vbar_el2, x0 // Donne l''adresse au registre système VBAR_EL2
 
     // jump to C code, should not return
 3:  bl      kernel_main
