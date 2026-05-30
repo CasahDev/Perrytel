@@ -14,6 +14,8 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     uart_init(4);
     uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
 
+    __asm__ volatile("brk #0");
+
     while (1) {
         unsigned char c = uart_getc();
         if (c == '\r') {
