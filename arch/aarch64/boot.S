@@ -33,6 +33,9 @@ _start:
     subs    w6, w6, #8
     b.gt    2b
 
+    ldr     x0, =vectors // Charge l''adresse de ta table
+    msr    vbar_el2, x0 // Donne l''adresse au registre système VBAR_EL2
+
     // jump to C code, should not return
 3:  bl      kernel_main
     // for failsafe, halt this core
