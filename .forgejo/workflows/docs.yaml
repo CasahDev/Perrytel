@@ -1,0 +1,37 @@
+name: Sync docs to wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout wiki
+        run: |
+          git clone "https://oauth2:${{ secrets.REPO_TOKEN }}@${{ github.server_url }}/${{ github.repository }}.wiki.git" wiki
+
+      - name: Copy docs to wiki
+        run: |
+          cp -r docs/* wiki/ || true
+          
+      - name: Commit and push wiki
+        run: |
+          cd wiki
+          git config user.name "Runner Bot"
+          git config user.email "runner@forgejo"
+          git add .
+          
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync docs from repo ($(date))"
+            git push
+          fi
