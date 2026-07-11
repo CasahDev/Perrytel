@@ -13,10 +13,8 @@ void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr) {
 };
 
 void irq_handler(void) {
-    uart_puts("Interruption reçue !\r\n");
-
-    volatile struct gic_distributor *gicd = (char *) GIC + 0x1000;
-    volatile struct gic_controller *gicc = (char *) GIC + 0x2000;
+    volatile struct gic_distributor *gicd = (volatile struct gic_distributor *) (GIC + 0x1000);
+    volatile struct gic_controller *gicc = (volatile struct gic_controller *) (GIC + 0x2000);
 
     const uint32_t iar = gicc->IAR;
 
@@ -32,4 +30,17 @@ void default_handler(const uint32_t iar) {
     uart_puts("Interruption reçue !\r\n");
     uart_puts(" IAR: ");
     uart_put_hex(iar);
+}
+
+
+void keyboard_callback(uint32_t iar) {
+    // 1. On récupère la touche (et ça acquitte l'interruption au niveau de l'UART)
+    unsigned char c = uart_getc();
+    
+    if (c == '\r') {
+        uart_putc('\r');
+        uart_putc('\n');
+    } else {
+        uart_putc(c);
+    }
 }
