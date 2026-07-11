@@ -1,6 +1,10 @@
 #include <stdint.h>
 #include <drivers/uart.h>
-#include <gic.h>
+#include <kernel/gic.h>
+
+void mon_callback_de_test(const uint32_t iar) {
+    uart_put_hex(iar);
+}
 
 #ifdef AARCH64
 void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
