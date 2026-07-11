@@ -1,6 +1,6 @@
 #include <drivers/uart.h>
-#include <gic.h>
-#include <exception.h>
+#include <kernel/gic.h>
+#include <kernel/exception.h>
 
 irq_callback_type interruption_handlers[1024];
 

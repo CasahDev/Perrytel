@@ -1,5 +1,5 @@
 #include <drivers/uart.h>
-#include <gic.h>
+#include <kernel/gic.h>
 
 void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr) {
     uart_puts("Invalid exception entry: ");
