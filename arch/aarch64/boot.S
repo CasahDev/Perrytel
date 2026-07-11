@@ -34,11 +34,31 @@ _start:
     b.gt    2b
 
     ldr     x0, =vectors // Charge l''adresse de ta table
-    msr    vbar_el2, x0 // Donne l''adresse au registre système VBAR_EL2
+    
+    // Charge l''adresse de la table des vecteurs pour EL1
+3:  ldr     x0, =vectors 
+    msr     vbar_el1, x0
 
-    // jump to C code, should not return
-3:  bl      kernel_main
-    // for failsafe, halt this core
+    // 1. HCR_EL2 : Prépare l''EL1 à s''exécuter en 64 bits (AArch64) en mettant le bit RW (31) à 1      
+    ldr     x0, =(1 << 31)
+    msr     hcr_el2, x0
+
+    // 2. SPSR_EL2 : Configure l''état cible (EL1h = 0b0101) et masque les interruptions (0x3C0)        
+    // 0x3C5 = DAIF masqués (1111) + M[4:0] configuré pour EL1h (00101)
+    ldr     x0, =0x3C5
+    msr     spsr_el2, x0
+
+    // 3. ELR_EL2 : Configure l''adresse vers laquelle sauter (kernel_main)
+    ldr     x0, =kernel_main
+    msr     elr_el2, x0
+
+    // 4. SP_EL1 : Initialise le pointeur de pile pour l''EL1
+    ldr     x0, =_start
+    msr     sp_el1, x0
+
+    // 5. Le grand saut : Fait croire au CPU qu''il revient d''une exception
+    // Il va lire ELR_EL2, SPSR_EL2 et atterrir dans kernel_main en EL1 !
+    eret
 halt:
     wfe
     b halt

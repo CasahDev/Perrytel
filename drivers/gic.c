@@ -1,6 +1,6 @@
 #include <drivers/uart.h>
-#include <gic.h>
-#include <exception.h>
+#include <kernel/gic.h>
+#include <kernel/exception.h>
 
 irq_callback_type interruption_handlers[1024];
 
@@ -18,6 +18,11 @@ void gic_init() {
     gicc->CTLR = 0x01;
 
     gicc->PMR = 0xFFFF;
+    
+    // Active les interuptions clavier
+    gicd->ISENABLER[4] |= (1 << 25);
+
+    gicd->ITARGETSR[38] |= (1 << 8);
 
     init_interruption_handlers();
 }

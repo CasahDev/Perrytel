@@ -85,7 +85,7 @@ void uart_init(int raspi)
     mmio_write(UART0_IBRD, 1);
     mmio_write(UART0_FBRD, 40);
     mmio_write(UART0_LCRH, (1 << 4) | (1 << 5) | (1 << 6));
-    mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) | (1 << 6) |
+    mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 6) |
                            (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10));
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
@@ -111,13 +111,13 @@ void uart_puts(const char* str)
 void uart_put_hex(uint64_t hex) {
     uart_puts("0x");
 
-    for (int i = 60; i > 0; i -= 4) {
+    for (int i = 60; i >= 0; i -= 4) {
         // 0xF pour ne garder que les 4 bits les plus petits
         unsigned int nible = (hex >> i) & 0xF;
         if (nible < 10) {
             uart_putc((unsigned char) '0' + nible);
         } else {
-            uart_putc((unsigned char) 'A' + hex - 10);
+            uart_putc((unsigned char) 'A' + nible - 10);
         }
     }
     uart_putc((unsigned char) '\n');
