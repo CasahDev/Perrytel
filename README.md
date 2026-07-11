@@ -3,8 +3,7 @@ Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des in
 
 ## Features
 - [x] Intéruptions
-- [ ] Timers
-- [ ] Mailbox
+- [x] Timers
 - [ ] EMMC/SD Host
 - [ ] Drivers clavier minitel
 - [ ] Multi processes
