@@ -3,6 +3,7 @@
 #include <kernel/gic.h>
 #include <drivers/timer.h>
 #include <kernel/exception.h>
+#include <kernel/videotex.h>
 
 #ifdef AARCH64
 void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
@@ -22,8 +23,25 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_interrupt(153, uart_handler);
     timer_init();
     register_interrupt(27, timer_handler);
-    uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
-    
+      
+    minitel_clear();
+    minitel_cursor(0); // On cache le curseur pour que ce soit joli
 
-    while(1) { asm volatile("wfe"); }
+    minitel_locate(1, 1);
+    minitel_print("+--------------------------------------+");
+    minitel_locate(1, 2);
+    minitel_print("|        BIENVENUE SUR PERRYTEL        |");
+    minitel_locate(1, 3);
+    minitel_print("+--------------------------------------+");
+
+    minitel_locate(5, 6);
+    minitel_print("-> En attente de connexion...");
+
+    
+    
+    while(1) { 
+        minitel_flush();
+        
+        asm volatile("wfe"); 
+    }
 }
