@@ -21,8 +21,11 @@ void gic_init() {
     
     // Active les interuptions clavier
     gicd->ISENABLER[4] |= (1 << 25);
-
     gicd->ITARGETSR[38] |= (1 << 8);
+
+    // Active les interruptions Timer 
+    gicd->ISENABLER[0] |= (1 << 27);
+
 
     init_interruption_handlers();
 }
