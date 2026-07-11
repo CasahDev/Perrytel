@@ -16,15 +16,9 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     
     gic_init();
     __asm__ volatile("msr daifclr, #2");
-    
+    register_interrupt(153, keyboard_callback);
     uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
-    while (1) {
-        unsigned char c = uart_getc();
-        if (c == '\r') {
-            uart_putc('\r');
-            uart_putc('\n');
-        } else {
-            uart_putc(c);
-        }
-    }
+    
+
+    while(1) { asm volatile("wfe"); }
 }

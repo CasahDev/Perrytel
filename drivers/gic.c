@@ -18,6 +18,11 @@ void gic_init() {
     gicc->CTLR = 0x01;
 
     gicc->PMR = 0xFFFF;
+    
+    // Active les interuptions clavier
+    gicd->ISENABLER[4] |= (1 << 25);
+
+    gicd->ITARGETSR[38] |= (1 << 8);
 
     init_interruption_handlers();
 }
@@ -28,9 +33,4 @@ void register_interrupt(uint32_t irq_id, irq_callback_type handler) {
 
 irq_callback_type get_interrupt_handler(uint32_t irq_id) {
     return interruption_handlers[irq_id];
-}
-
-void gic_test_sgi(void) {
-    volatile struct gic_distributor *gicd = (volatile struct gic_distributor *) ((char *) GIC + 0x1000);
-    gicd->SGIR = 0x02000001;
 }
