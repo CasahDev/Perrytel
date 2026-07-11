@@ -42,4 +42,4 @@ typedef void (*irq_callback_type) (uint32_t);
 void gic_init();
 void register_interrupt(uint32_t timer_id, irq_callback_type handler);
 irq_callback_type get_interrupt_handler(uint32_t timer_id);
-void keyboard_callback(uint32_t iar);
+void uart_handler(uint32_t iar);
