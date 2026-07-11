@@ -4,7 +4,7 @@ Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des in
 ## Features
 - [x] Intéruptions
 - [x] Timers
-- [ ] Drivers clavier minitel
+- [x] Drivers clavier minitel
 - [ ] Multi processes
 - [ ] EMMC/SD Host
 - [ ] Système de fichiers
