@@ -21,15 +21,15 @@
     stp x28, x29, [sp, #16 * 14]
     str x30, [sp, #16 * 15]
 
-    mrs x0, elr_el2 // Save the return address in x32
-    mrs x1, spsr_el2 // Save the return address in x33
+    mrs x0, elr_el1 // Save the return address in x32
+    mrs x1, spsr_el1 // Save the return address in x33
     stp x0, x1, [sp, #16 * 16] // Save the return address on the stack
 .endm
 
 .macro kernel_exit
     ldp x0, x1, [sp, #16 * 16] // Restore the return address from the stack
-    msr elr_el2, x0 // Restore the return address to elr_el
-    msr spsr_el2, x1 // Restore the return address to spsr_el1
+    msr elr_el1, x0 // Restore the return address to elr_el
+    msr spsr_el1, x1 // Restore the return address to spsr_el1
     
     ldp x0, x1, [sp, #16 * 0]
     ldp x2, x3, [sp, #16 * 1]
@@ -80,8 +80,8 @@ vectors:
 // Default handlers for exceptions. These will just loop indefinitely, but you can replace them with something more useful if you want.
 .macro handle_invalid_entry type
     mov x0, #\type
-    mrs x1, esr_el2
-    mrs x2, elr_el2
+    mrs x1, esr_el1
+    mrs x2, elr_el1
     bl show_invalid_entry_message
     b .
 .endm
