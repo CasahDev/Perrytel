@@ -3,7 +3,7 @@
 #include <kernel/string.h>
 #include <drivers/timer.h>
 
-const int command_number = 2;
+const int command_number = 3;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
@@ -18,9 +18,20 @@ void time_command(int argc, char **argv) {
     uart_puts("\r\n");
 }
 
+void echo(int argc, char **argv) {
+    for (int i = 0; i < argc; i++) {
+        uart_puts(argv[i+1]);
+        uart_putc(' ');
+    } 
+
+    uart_putc('\r');
+    uart_putc('\n');
+}
+
 Command list[] = {
     {"help", help},
-    {"time", time_command}
+    {"time", time_command},
+    {"echo", echo}
 };
 
 void exec(char *command) {
