@@ -23,7 +23,12 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     timer_init();
     register_interrupt(27, timer_handler);
     uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
+
+    uart_puts("Perry -> ");
     
 
-    while(1) { asm volatile("wfe"); }
+    while(1) {
+        execute_command();
+        asm volatile("wfe"); 
+    }
 }
