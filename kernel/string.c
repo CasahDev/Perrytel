@@ -27,3 +27,38 @@ void strcpy(const char *src, char *dest) {
     }
     dest[i] = '\0';
 }
+
+void itoa(int n, char *dist) {
+    if (n == 0) {
+        dist[0] = '0'; 
+        dist[1] = '\0';
+        return;
+    }
+
+    bool is_negative = false;
+    if (n < 0) {
+        is_negative = true;
+        dist[0] = '-';
+        n = -n;
+    }
+    
+    int i = 0;
+    while (n != 0) {
+        dist[i] = 48 + (n % 10);
+        i++;
+        n /= 10;
+    }
+
+    if (is_negative) {
+        dist[i] = '-';
+        i++;
+    }
+
+    for (int start = 0; start < i/2; start++) {
+        char temp = dist[start];
+        dist[start] = dist[i-start-1];
+        dist[i-start-1] = temp;
+    } 
+
+    dist[i] = '\0';
+}
