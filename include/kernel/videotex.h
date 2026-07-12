@@ -11,3 +11,4 @@ void minitel_putc(char c);
 void minitel_cursor(int visible);
 
 void minitel_flush(void);
+void minitel_hardware_clear(void);

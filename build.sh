@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXTRA_CFLAGS="-Iinclude"
+EXTRA_CFLAGS="-Iinclude -mgeneral-regs-only"
 ARCH_DIR="arch/aarch64"
 KERNEL_DIR="kernel"
 DRIVER_DIR="drivers"

@@ -2,15 +2,19 @@
 
 // 24 lignes, 40 colonnes (On initialise tout avec des espaces)
 static char vram[24][40]; 
+static char previous_vram[24][40]; 
 
 // Position actuelle du curseur "virtuel"
 static int cursor_x = 1;
 static int cursor_y = 1;
 
+static int screen_dirty = 1;
+
 void minitel_init() {
     for (int x = 0; x < 40; x++) {
         for (int y = 0; y < 24; y++) {
             vram[y][x] = ' ';
+            previous_vram [y][x] = ' ';
         }
     }
 }
@@ -21,6 +25,8 @@ void minitel_clear() {
             vram[y][x] = ' ';
         }
     }
+
+    screen_dirty = 1;
 }
 
 void minitel_beep() {
@@ -68,6 +74,7 @@ void minitel_putc(char c) {
         if (cursor_x <= 40) {
             vram[cursor_y - 1][cursor_x - 1] = c;
             cursor_x++;
+            screen_dirty = 1;
         }
     }
     
@@ -83,17 +90,31 @@ void minitel_removec() {
 }
 
 void minitel_flush() {
-    minitel_cursor(0);
-    for (int y = 0; y < 24; y++) {
-        for (int x = 0; x < 40; x++) {
-            uart_putc(vram[y][x]);
+    if (screen_dirty) {
+        minitel_cursor(0);
+        for (int y = 0; y < 24; y++) {
+            for (int x = 0; x < 40; x++) {
+                if (previous_vram[y][x] != vram[y][x]) {
+                    minitel_locate(x + 1, y + 1);
+                    uart_putc(vram[y][x]);
+                    previous_vram[y][x] = vram[y][x];
+                }
+            }
         }
+
+        minitel_locate(cursor_x, cursor_y);
+
+        minitel_cursor(1);
+        screen_dirty = 0;
+    }
+}
+
+void minitel_hardware_clear() {
+    #ifdef QEMU
+        uart_puts("\x1B[2J\x1B[H");
         uart_putc('\r');
         uart_putc('\n');
-    }
-
-    minitel_locate(cursor_x, cursor_y + 1);
-
-    minitel_cursor(1);
-
+    #else
+        uart_putc(0x0C);
+    #endif
 }
