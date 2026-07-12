@@ -34,5 +34,6 @@ unsigned char uart_getc();
 void uart_puts(const char* str);
 void uart_put_hex(uint64_t hex);
 void uart_handle_interrupt();
+void execute_command(void);
 
 #endif

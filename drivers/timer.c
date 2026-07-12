@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <drivers/timer.h>
 
+volatile unsigned long time;
+
 // Exemple pour lire la fréquence du timer
 static inline uint64_t read_cntfrq(void) {
     uint64_t val;
@@ -27,4 +29,11 @@ void timer_init(void) {
 
 void timer_reset() {
     write_cntv_tval(read_cntfrq());
+}
+void set_time(unsigned long new_time) {
+    time = new_time; 
+}
+
+unsigned long get_time() {
+    return time;
 }

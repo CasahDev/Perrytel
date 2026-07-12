@@ -1,11 +1,18 @@
 #include <drivers/uart.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <kernel/string.h>
+#include <kernel/shell.h>
 
 static uint32_t MMIO_BASE;
 
 volatile unsigned char tx_buffer[1024];
 volatile uint32_t tx_head;
 volatile uint32_t tx_tail;
+
+char shell_buffer[256];
+volatile int shell_index;
+volatile bool command_ready = false;
 
 // Memory-Mapped I/O output
 static inline void mmio_write(uint32_t reg, uint32_t data)
@@ -123,12 +130,15 @@ void uart_handle_interrupt() {
         while(!(mmio_read(UART0_FR) & (1 << 4))) {
             // 1. On récupère la touche (et ça acquitte l'interruption au niveau de l'UART)
             unsigned char c = mmio_read(UART0_DR);
-            
             if (c == '\r') {
                 uart_putc('\r');
                 uart_putc('\n');
+                shell_buffer[shell_index] = '\0';
+                command_ready = true;
             } else {
                 uart_putc(c);
+                shell_buffer[shell_index] = c;
+                shell_index = (shell_index + 1) % 256;
             }
         }
     }
@@ -140,4 +150,15 @@ void uart_handle_interrupt() {
             mmio_write(UART0_IMSC, mmio_read(UART0_IMSC) & ~(1 << 5));
         }
     }
+}
+
+void execute_command() {
+    if (!command_ready) return;
+
+    exec(shell_buffer);
+
+    shell_index = 0;
+    command_ready = false;
+
+    uart_puts("Perry -> ");
 }
