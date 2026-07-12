@@ -69,7 +69,7 @@ void minitel_putc(char c) {
     else if (c == '\r') {
         cursor_x = 1;
     }
-    else if (c >= 0x20 && c <= 0x7E) { 
+    else if ((c >= 0x20 && c <= 0x7E) || c == 0x0E || c == 0x0F) {         
         // On vérifie qu'on ne déborde pas de l'écran à droite
         if (cursor_x <= 40) {
             vram[cursor_y - 1][cursor_x - 1] = c;
@@ -117,4 +117,25 @@ void minitel_hardware_clear() {
     #else
         uart_putc(0x0C);
     #endif
+}
+
+void minitel_draw_image(int start_x, int start_y, int width, int height, const int *logo) {
+    for (int y = 0; y < height; y++) {
+        minitel_locate(start_x, start_y + y); // On va au début de la ligne          
+        minitel_putc(0x0E); // On allume le mode dessin
+        
+        for (int x = 0; x < width; x++) {
+            minitel_draw_block(logo[y * width + x]); // Formule 2D vers 1D           
+        }
+        
+        minitel_putc(0x0F); // On remet le texte normal
+    }
+}
+
+void minitel_draw_block(int pixels) {
+    if (pixels > 31 && pixels < 64) {
+        minitel_putc(0x40 + pixels);
+    } else if (pixels >= 0) {
+        minitel_putc(0x20 + pixels);
+    }
 }

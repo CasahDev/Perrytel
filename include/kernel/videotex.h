@@ -12,3 +12,5 @@ void minitel_cursor(int visible);
 
 void minitel_flush(void);
 void minitel_hardware_clear(void);
+
+void minitel_draw_image(int start_x, int start_y, int width, int height, const int *logo);
