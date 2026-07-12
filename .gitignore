@@ -1,2 +1,4 @@
 build/
 qemu-build/
+.vscode/
+.clangd
