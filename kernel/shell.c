@@ -1,16 +1,26 @@
 #include <kernel/shell.h>
 #include <drivers/uart.h>
 #include <kernel/string.h>
+#include <drivers/timer.h>
 
-const int command_number = 1;
+const int command_number = 2;
 
 void help() {
     uart_puts("Voici la liste des commandes disponibles\r\n");
     uart_puts("help\r\n");
+    uart_puts("time\r\n");
+}
+
+void time_command() {
+    char *current;
+    itoa(get_time(), current);
+    uart_puts(current);
+    uart_puts("\r\n");
 }
 
 Command list[] = {
-    {"help", help}
+    {"help", help},
+    {"time", time_command}
 };
 
 void exec(const char *command) {

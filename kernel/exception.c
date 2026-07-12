@@ -41,4 +41,5 @@ void uart_handler(uint32_t iar) {
 
 void timer_handler(uint32_t iar) {
     timer_reset();
+    set_time(get_time() + 1);
 }
