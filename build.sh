@@ -1,5 +1,5 @@
-#!/bin/bash
-
+#!/bin/bash 
+set -e
 EXTRA_CFLAGS="-Iinclude"
 ARCH_DIR="arch/aarch64"
 KERNEL_DIR="kernel"
