@@ -2,12 +2,11 @@
 Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des information sur un minitel 1b
 
 ## Features
-- [ ] Intéruptions
-- [ ] Timers
-- [ ] Mailbox
-- [ ] EMMC/SD Host
+- [x] Intéruptions
+- [x] Timers
 - [ ] Drivers clavier minitel
 - [ ] Multi processes
+- [ ] EMMC/SD Host
 - [ ] Système de fichiers
 - [ ] Drivers ethernets
  
