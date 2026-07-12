@@ -18,3 +18,12 @@ bool strcmp(const char *str1, const char *str2) {
 
     return false;
 }
+
+void strcpy(const char *src, char *dest) {
+    unsigned long i = 0; 
+    while (src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
