@@ -16,7 +16,7 @@ jobs:
 
       - name: Checkout wiki
         run: |
-          git clone "https://oauth2:${{ secrets.REPO_TOKEN }}@${{ github.server_url }}/${{ github.repository }}.wiki.git" wiki
+          git clone "https://oauth2:${{ secrets.REPO_TOKEN }}@git.casahdev.fr/CasahDev/PerryTel.wiki.git" wiki
 
       - name: Copy docs to wiki
         run: |
