@@ -62,3 +62,18 @@ void itoa(int n, char *dist) {
 
     dist[i] = '\0';
 }
+
+int strsplit(char *str, char **argv, int max_args) {
+    unsigned long i = 0;
+    int argc = 0;
+    while (str[i] != '\0') {
+        if (str[i] == ' ') str[i] = '\0';
+        else if(i == 0 || str[i-1] == '\0'){
+             argv[argc] = &str[i];
+             argc++;
+        }
+        i++;
+    }
+
+    return argc;
+}
