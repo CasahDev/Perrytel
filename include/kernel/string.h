@@ -4,7 +4,7 @@ unsigned long strlen(const char *str);
 
 bool strcmp(const char *str1, const char *str2);
 
-void strcpy(const char *src, char *dest);
+void strcpy(char *dest, const char *src);
 
 void itoa(int n, char *dist);
 
