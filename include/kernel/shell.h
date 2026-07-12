@@ -1,8 +1,8 @@
-typedef void (*function)();
+typedef void (*function)(int argc, char **argv);
 
 typedef struct {
-    const char *name;;
-    function exec;
+    const char *name;
+    function run;
 } Command;
 
-void exec(const char* command);
+void exec(char* command);
