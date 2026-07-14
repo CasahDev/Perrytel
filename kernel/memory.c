@@ -18,7 +18,7 @@ void *kalloc(unsigned int size) {
 
         // On retourne l'adresse de la mémoire UTILISABLE (juste après le Header)         
         // L'astuce (heap_start + 1) en C avance l'adresse de la taille exacte du Header !
-        return (void*)(heap_start + 1); 
+        return (void*)(heap_start + 1);
     }
 
     struct block_meta *current = heap_start;
@@ -50,4 +50,11 @@ void kfree(void *ptr) {
 
     struct block_meta *header = (struct block_meta *)ptr - 1;
     header->is_free = true;
+}
+
+void memset(void *ptr, int value, size_t size) {
+    char *mem = ptr;
+    for (size_t i = 0; i < size; i++) {
+        mem[i] = value;
+    }
 }

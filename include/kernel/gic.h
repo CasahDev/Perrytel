@@ -36,10 +36,10 @@ struct gic_controller
     uint32_t EOIR;
 };
 
-typedef void (*irq_callback_type) (uint32_t);
+typedef void *(*irq_callback_type) (uint32_t, void*);
 
 
 void gic_init();
 void register_interrupt(uint32_t timer_id, irq_callback_type handler);
 irq_callback_type get_interrupt_handler(uint32_t timer_id);
-void uart_handler(uint32_t iar);
+void *uart_handler(uint32_t iar, void *sp);
