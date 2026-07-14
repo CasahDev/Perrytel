@@ -9,7 +9,7 @@ enum State {
 struct Task {
     int pid;
     enum State state;
-    void *stack_pointer;
+    TrapFrame *stack_pointer;
 };
 
 volatile stack_pointer;
@@ -18,6 +18,7 @@ typedef void (*task_function)();
 
 void create_task(task_function *task);
 
+void *schedule(void *sp);
 
 typedef struct {
     uint64_t elr_el1;

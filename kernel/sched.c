@@ -26,8 +26,17 @@ void create_task(task_function *task_function) {
         SLEEPING,
         frame
     };
+    tasks[task_count] = task;
     
     task_count++;
+}
 
-    tasks[task_count] = task;
+void *schedule(void *sp) {
+    tasks[task_id].stack_pointer = sp;
+    tasks[task_id].state = SLEEPING;
+
+    task_id = (task_id + 1) % task_count;
+    tasks[task_id].state = RUNNING;
+
+    return tasks[task_id].stack_pointer;
 }
