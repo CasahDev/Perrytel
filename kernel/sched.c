@@ -13,8 +13,8 @@ void create_task(task_function *task_function) {
     if (task_count >= MAX_TASKS) return;
 
     void *stack = kalloc(4096);
-    TrapFrame *frame = (uint8_t *) stack + ((struct block_meta *) stack)->size - sizeof(TrapFrame);
-
+    TrapFrame *frame = (TrapFrame *)((uint8_t *)stack + 4096 - sizeof(TrapFrame));
+    
     memset(frame, 0, sizeof(TrapFrame));
 
     frame->elr_el1 = (uint64_t) task_function;

@@ -6,23 +6,7 @@ enum State {
     SLEEPING
 };
 
-struct Task {
-    int pid;
-    enum State state;
-    TrapFrame *stack_pointer;
-};
-
-volatile stack_pointer;
-
-typedef void (*task_function)();
-
-void create_task(task_function *task);
-
-void *schedule(void *sp);
-
 typedef struct {
-    uint64_t elr_el1;
-    uint64_t spsr_el1;
     uint64_t x0;
     uint64_t x1;
     uint64_t x2;
@@ -54,5 +38,19 @@ typedef struct {
     uint64_t x28;
     uint64_t x29;
     uint64_t x30;
-    uint64_t sp;
+    uint64_t padding;
+    uint64_t elr_el1;
+    uint64_t spsr_el1;
 } TrapFrame;
+
+struct Task {
+    int pid;
+    enum State state;
+    TrapFrame *stack_pointer;
+};
+
+typedef void (*task_function)();
+
+void create_task(task_function *task);
+
+void *schedule(void *sp);
