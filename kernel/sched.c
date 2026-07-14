@@ -6,7 +6,7 @@
 
 struct Task tasks[MAX_TASKS] = {};
 int task_id = 0;
-int task_count = 0;                                                                                     
+int task_count = 1;                                                                                     
 
 
 void create_task(task_function *task_function) {
@@ -14,13 +14,13 @@ void create_task(task_function *task_function) {
 
     void *stack = kalloc(4096);
     TrapFrame *frame = (TrapFrame *)((uint8_t *)stack + 4096 - sizeof(TrapFrame));
-    
+
     memset(frame, 0, sizeof(TrapFrame));
 
     frame->elr_el1 = (uint64_t) task_function;
 
-    frame->spsr_el1 = 0x3C5; 
-
+    frame->spsr_el1 = 0x345;
+    
     struct Task task = {
         task_count,
         SLEEPING,
