@@ -107,5 +107,7 @@ fiq_invalid_el0_32:   handle_invalid_entry 14
 error_invalid_el0_32: handle_invalid_entry 15
 
 irq_handler_el1h:
+    mov x0, sp
     bl irq_handler
+    mov sp, x0
     kernel_exit
