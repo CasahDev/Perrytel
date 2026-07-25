@@ -11,8 +11,8 @@ void init_interruption_handlers() {
 }
 
 void gic_init() {
-    volatile struct gic_distributor *gicd = (char *) GIC + 0x1000;
-    volatile struct gic_controller *gicc = (char *) GIC + 0x2000;
+    volatile struct gic_distributor *gicd = (struct gic_distributor *) ((char*) GIC + 0x1000);
+    volatile struct gic_controller *gicc = (struct gic_controller *) ((char*) GIC + 0x2000);
 
     gicd->CTLR = 0x01;
     gicc->CTLR = 0x01;
