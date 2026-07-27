@@ -29,4 +29,5 @@ void mmu_init() {
     }
 
     __asm volatile("msr TCR_EL1, %0" :: "r" (T0SZ | IRGN0 | ORGN0 | SH0 | TG0 | EDP1 | IPS));
+    __asm volatile("msr MAIR_EL1, %0" :: "r" (0xFF | 0x00 << 8));
 }
