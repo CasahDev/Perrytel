@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <kernel/string.h>
+#include <drivers/uart.h>
 
 struct block_meta *heap_start = NULL; 
 
@@ -72,4 +73,61 @@ void memset(void *ptr, const int value, const size_t size) {
     for (size_t i = 0; i < size; i++) {
         mem[i] = value;
     }
+}
+
+void meminfo(int argc, char **argv) {
+    int blocks = 0;
+    int free = 0;
+    int occupied = 0;
+    int allocated_size = 0;
+    int free_size = 0;
+
+    const struct block_meta *current = heap_start;
+    while (current != NULL) {
+        blocks++;
+        if (current->is_free) {
+            free_size += current->size;
+            free++;
+        } else {
+            allocated_size += current->size;
+            occupied++;
+        }
+
+        current = current->next_block;
+    }
+
+    char b[15];
+    itoa(blocks, b);
+
+    char f[15];
+    itoa(free, f);
+
+    char o[15];
+    itoa(occupied, o);
+
+    char as[15];
+    itoa(allocated_size, as);
+
+    char fs[15];
+    itoa(free_size, fs);
+
+    uart_puts("Blocks: ");
+    uart_puts(b);
+    uart_puts("\r\n");
+
+    uart_puts("Free: ");
+    uart_puts(f);
+    uart_puts("\r\n");
+
+    uart_puts("Occupied: ");
+    uart_puts(o);
+    uart_puts("\r\n");
+
+    uart_puts("Allocated memory: ");
+    uart_puts(as);
+    uart_puts("\r\n");
+
+    uart_puts("Free memory: ");
+    uart_puts(fs);
+    uart_puts("\r\n");
 }

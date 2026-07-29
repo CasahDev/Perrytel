@@ -2,13 +2,16 @@
 #include <drivers/uart.h>
 #include <kernel/string.h>
 #include <drivers/timer.h>
+#include <kernel/memory.h>
 
-const int command_number = 3;
+const int command_number = 4;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
     uart_puts("help\r\n");
     uart_puts("time\r\n");
+    uart_puts("echo\r\n");
+    uart_puts("meminfo\r\n");
 }
 
 void time_command(int argc, char **argv) {
@@ -28,10 +31,11 @@ void echo(int argc, char **argv) {
     uart_putc('\n');
 }
 
-Command list[] = {
-    {"help", help},
-    {"time", time_command},
-    {"echo", echo}
+static Command list[] = {
+    {.name = "help", .run = help},
+    {.name = "time", .run = time_command},
+    {.name = "echo", .run = echo},
+    {.name = "meminfo", .run = meminfo}
 };
 
 void exec(char *command) {
