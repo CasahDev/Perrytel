@@ -57,11 +57,17 @@ void *kalloc(unsigned int size) {
 void kfree(void *ptr) {
     if (ptr == NULL) return;
 
-    struct block_meta *header = (struct block_meta *)ptr - 1;
-    header->is_free = true;
+    const struct block_meta *header = (struct block_meta *)ptr - 1;
+
+    struct block_meta *new_header = (struct block_meta *)ptr - 1;
+    new_header->is_free = true;
+    while (new_header->next_block != NULL && new_header->next_block->is_free) {
+        new_header->size = header->size + header->next_block->size + sizeof(struct block_meta);
+        new_header->next_block = header->next_block->next_block;
+    }
 }
 
-void memset(void *ptr, int value, size_t size) {
+void memset(void *ptr, const int value, const size_t size) {
     char *mem = ptr;
     for (size_t i = 0; i < size; i++) {
         mem[i] = value;
