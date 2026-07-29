@@ -27,14 +27,23 @@ void *kalloc(unsigned int size) {
     while (current != NULL)
     {
         if (current->is_free && current->size > size) {
+            if (current->size > size + sizeof(struct block_meta) + 20) {
+                struct block_meta *next = (struct block_meta*)((uint8_t *) current + sizeof(struct block_meta) + size);
+                next->size = current->size - (size + sizeof(struct block_meta));
+                next->is_free = true;
+                next->next_block = current->next_block;
+
+                current->next_block = next;
+                current->size = size;
+            }
             current->is_free = false;
-            return (void*)(current + 1);
+            return current + 1;
         }
 
         last = current;
         current = current->next_block;
     }
-    
+
     // (uint8_t*) permet de calculer en "octets"
     struct block_meta *new_block = (struct block_meta *)((uint8_t*)(last + 1) + last->size);
     new_block->size = size;
