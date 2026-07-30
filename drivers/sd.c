@@ -41,8 +41,14 @@
 #define INTERNAL_CLOCK_ENABLE 0x1
 #define INTERNAL_CLOCK_STABLE 0x1 << 1
 #define SD_CLOCK_ENABLE 0x1 << 2
-#define CLOCK_DEVISER 0x7C << 8
+#define CLOCK_DIVISOR 0x7C << 8
 
+void send_command(uint32_t cmdtm, uint32_t args) {
+    mmio_write(EMMC, ARG1, args);
+    mmio_write(EMMC, CMDTM, cmdtm);
+    while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+    mmio_write(EMMC, INTERRUPT, 0x1);
+}
 
 void sd_init() {
     uint32_t control1 = mmio_read(EMMC, CONTROL1_POS);
@@ -54,7 +60,7 @@ void sd_init() {
     control1 = mmio_read(EMMC, CONTROL1_POS);
     control1 |= INTERNAL_CLOCK_ENABLE;
     control1 &= ~(0xFF << 8);
-    control1 |= CLOCK_DEVISER;
+    control1 |= CLOCK_DIVISOR;
     mmio_write(EMMC, CONTROL1_POS, control1);
     while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
 
@@ -76,33 +82,16 @@ void sd_init() {
 
     if (mmio_read(EMMC, RESP0) == TENSION_TEST) {
         while ((mmio_read(EMMC, RESP0) >> 31 & 0x1)== 0x0) {
+            send_command(CMD55, NO_ARGS);
 
-            mmio_write(EMMC, ARG1, NO_ARGS);
-            mmio_write(EMMC, CMDTM, CMD55);
-            while (mmio_read(EMMC, INTERRUPT) == 0x0){}
-            mmio_write(EMMC, INTERRUPT, 0x1);
-
-            mmio_write(EMMC, ARG1, HCS_OCR);
-            mmio_write(EMMC, CMDTM, ACMD41);
-            while (mmio_read(EMMC, INTERRUPT) == 0x0){}
-            mmio_write(EMMC, INTERRUPT, 0x1);
+            send_command(ACMD41, HCS_OCR);
         }
 
-        mmio_write(EMMC, CMDTM, CMD2);
-        mmio_write(EMMC, CMDTM, NO_ARGS);
-        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
-        mmio_write(EMMC, INTERRUPT, 0x1);
+        send_command(CMD2, NO_ARGS);
 
-        mmio_write(EMMC, CMDTM, CMD3);
-        mmio_write(EMMC, CMDTM, NO_ARGS);
-        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
-        mmio_write(EMMC, INTERRUPT, 0x1);
+        send_command(CMD3, NO_ARGS);
 
         const uint32_t rca = mmio_read(EMMC, RESP0) >> 16;
-
-        mmio_write(EMMC, CMDTM, CMD7);
-        mmio_write(EMMC, CMDTM, rca);
-        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
-        mmio_write(EMMC, INTERRUPT, 0x1);
+        send_command(CMD7, rca);
     }
 }
