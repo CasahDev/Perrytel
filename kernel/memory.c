@@ -10,7 +10,7 @@ struct block_meta *heap_start = NULL;
 void *kalloc(unsigned int size) {
     if (heap_start == NULL) {
         // On pose notre calque sur l'adresse de __end
-        heap_start = (struct block_meta *)&__end; 
+        heap_start = (struct block_meta *)0x300000;
         
         // On remplit les informations du Header
         heap_start->size = size;
