@@ -1,8 +1,9 @@
 #include <drivers/uart.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <kernel/string.h>
 #include <kernel/shell.h>
+
+#include <kernel/mmio.h>
 
 static uint32_t MMIO_BASE;
 
@@ -13,18 +14,6 @@ volatile uint32_t tx_tail;
 char shell_buffer[256];
 volatile int shell_index;
 volatile bool command_ready = false;
-
-// Memory-Mapped I/O output
-static inline void mmio_write(uint32_t reg, uint32_t data)
-{
-	*(volatile uint32_t*)(uintptr_t)(MMIO_BASE + reg) = data;
-}
-
-// Memory-Mapped I/O input
-static inline uint32_t mmio_read(uint32_t reg)
-{
-	return *(volatile uint32_t*)(uintptr_t)(MMIO_BASE + reg);
-}
 
 // Loop <delay> times in a way that the compiler won't optimize away
 static inline void delay(int32_t count)
@@ -38,14 +27,14 @@ volatile unsigned int __attribute__((aligned(16))) mbox[9] = {
 };
 
 void uart_set_baudrate(uint32_t baud) {
-    mmio_write(UART0_CR, 0);
+    mmio_write(MMIO_BASE, UART0_CR, 0);
     uint32_t divisor = 12000000 / baud;
     uint32_t ibrd = divisor / 64;
     uint32_t fbrd = divisor % 64;
-    mmio_write(UART0_IBRD, ibrd);
-    mmio_write(UART0_FBRD, fbrd);
-    mmio_write(UART0_LCRH, (1 << 1) | (1 << 2) | (1 << 4) | (1 << 6));
-    mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
+    mmio_write(MMIO_BASE, UART0_IBRD, ibrd);
+    mmio_write(MMIO_BASE, UART0_FBRD, fbrd);
+    mmio_write(MMIO_BASE, UART0_LCRH, (1 << 1) | (1 << 2) | (1 << 4) | (1 << 6));
+    mmio_write(MMIO_BASE, UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
 
 void uart_init(int raspi)
@@ -57,50 +46,50 @@ void uart_init(int raspi)
         default: MMIO_BASE = 0x20000000; break;
     }
 
-    mmio_write(UART0_CR, 0x00000000);
+    mmio_write(MMIO_BASE, UART0_CR, 0x00000000);
 
-    uint32_t selector = mmio_read(GPFSEL1);
+    uint32_t selector = mmio_read(MMIO_BASE, GPFSEL1);
     selector &= ~((7 << 12) | (7 << 15));
     selector |= (4 << 12) | (4 << 15);
-    mmio_write(GPFSEL1, selector);
+    mmio_write(MMIO_BASE, GPFSEL1, selector);
 
-    mmio_write(GPPUD, 0x00000000);
+    mmio_write(MMIO_BASE, GPPUD, 0x00000000);
     delay(150);
-    mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
+    mmio_write(MMIO_BASE, GPPUDCLK0, (1 << 14) | (1 << 15));
     delay(150);
-    mmio_write(GPPUDCLK0, 0x00000000);
-    mmio_write(UART0_ICR, 0x7FF);
+    mmio_write(MMIO_BASE, GPPUDCLK0, 0x00000000);
+    mmio_write(MMIO_BASE, UART0_ICR, 0x7FF);
 
     #ifndef QEMU
     if (raspi >= 3) {
         unsigned int r = (((uintptr_t)(&mbox) & ~0xF) | 8);
-        while ( mmio_read(MBOX_STATUS) & 0x80000000 ) { }
-        mmio_write(MBOX_WRITE, r);
-        while ( (mmio_read(MBOX_STATUS) & 0x40000000) || mmio_read(MBOX_READ) != r ) { }
+        while ( mmio_read(MMIO_BASE, MBOX_STATUS) & 0x80000000 ) { }
+        mmio_write(MMIO_BASE, MBOX_WRITE, r);
+        while ( (mmio_read(MMIO_BASE, MBOX_STATUS) & 0x40000000) || mmio_read(MMIO_BASE, MBOX_READ) != r ) { }
     }
 	#endif
 
     uart_set_baudrate(1200);
-    mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 6) |
+    mmio_write(MMIO_BASE, UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 6) |
                            (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10));
 }
 
 void uart_putc(unsigned char c)
 {
-    mmio_write(UART0_IMSC, mmio_read(UART0_IMSC) & ~(1 << 5));
+    mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) & ~(1 << 5));
     if(tx_head == tx_tail) {
         tx_buffer[tx_head] = c;
         tx_head = (1 + tx_head) % 1024;
-        mmio_write(UART0_DR, c);
+        mmio_write(MMIO_BASE, UART0_DR, c);
         tx_tail = (1 + tx_tail) % 1024;
     }
-   mmio_write(UART0_IMSC, mmio_read(UART0_IMSC) | (1 << 5)); 
+   mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) | (1 << 5));
 }
 
 unsigned char uart_getc()
 {
-    while ( mmio_read(UART0_FR) & (1 << 4) ) { }
-    return mmio_read(UART0_DR);
+    while ( mmio_read(MMIO_BASE, UART0_FR) & (1 << 4) ) { }
+    return mmio_read(MMIO_BASE, UART0_DR);
 }
 
 void uart_puts(const char* str)
@@ -125,11 +114,11 @@ void uart_put_hex(uint64_t hex) {
 }
 
 void uart_handle_interrupt() {
-    uint32_t mis = mmio_read(UART0_MIS);
+    uint32_t mis = mmio_read(MMIO_BASE, UART0_MIS);
     if ((mis & (1 << 4)) || (mis & (1 << 6))) {    
-        while(!(mmio_read(UART0_FR) & (1 << 4))) {
+        while(!(mmio_read(MMIO_BASE, UART0_FR) & (1 << 4))) {
             // 1. On récupère la touche (et ça acquitte l'interruption au niveau de l'UART)
-            unsigned char c = mmio_read(UART0_DR);
+            unsigned char c = mmio_read(MMIO_BASE, UART0_DR);
             if (c == '\r') {
                 uart_putc('\r');
                 uart_putc('\n');
@@ -144,10 +133,10 @@ void uart_handle_interrupt() {
     }
     if (mis & (1 << 5) ) {
         if (tx_head != tx_tail) {
-            mmio_write(UART0_DR, tx_buffer[tx_tail]);
+            mmio_write(MMIO_BASE, UART0_DR, tx_buffer[tx_tail]);
             tx_tail = (tx_tail + 1) % 1024;
         } else {
-            mmio_write(UART0_IMSC, mmio_read(UART0_IMSC) & ~(1 << 5));
+            mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) & ~(1 << 5));
         }
     }
 }
