@@ -14,11 +14,23 @@
 #define RESPONSE 0x02 << 16
 #define NO_RESPONSE 0x00 << 16
 
+
+// Récupère le numéro de série et lui fait générer son RCA
 #define CMD2 (2 << 24 | RESPONSE)
+
+// Récupère l'adresse RCA de la carte SD
 #define CMD3 (3 << 24 | RESPONSE)
+
+// Selection de la carte via l'argument (adresse RCA)
 #define CMD7 (7 << 24 | RESPONSE)
+
+//Check la tension de la carte
 #define CMD8 (8 << 24 | RESPONSE)
+
+// Commande spéciale pour négocier le support de la haute capacité
 #define ACMD41 (41 << 24 | RESPONSE)
+
+// Préviens la carte sd de l'utilisation d'une commande spéciale
 #define CMD55 (55 << 24 | RESPONSE)
 
 #define NO_ARGS 0x0
@@ -63,6 +75,34 @@ void sd_init() {
     mmio_write(EMMC, INTERRUPT, 0x1);
 
     if (mmio_read(EMMC, RESP0) == TENSION_TEST) {
+        while ((mmio_read(EMMC, RESP0) >> 31 & 0x1)== 0x0) {
 
+            mmio_write(EMMC, ARG1, NO_ARGS);
+            mmio_write(EMMC, CMDTM, CMD55);
+            while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+            mmio_write(EMMC, INTERRUPT, 0x1);
+
+            mmio_write(EMMC, ARG1, HCS_OCR);
+            mmio_write(EMMC, CMDTM, ACMD41);
+            while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+            mmio_write(EMMC, INTERRUPT, 0x1);
+        }
+
+        mmio_write(EMMC, CMDTM, CMD2);
+        mmio_write(EMMC, CMDTM, NO_ARGS);
+        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+        mmio_write(EMMC, INTERRUPT, 0x1);
+
+        mmio_write(EMMC, CMDTM, CMD3);
+        mmio_write(EMMC, CMDTM, NO_ARGS);
+        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+        mmio_write(EMMC, INTERRUPT, 0x1);
+
+        const uint32_t rca = mmio_read(EMMC, RESP0) >> 16;
+
+        mmio_write(EMMC, CMDTM, CMD7);
+        mmio_write(EMMC, CMDTM, rca);
+        while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+        mmio_write(EMMC, INTERRUPT, 0x1);
     }
 }
