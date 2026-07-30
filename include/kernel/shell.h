@@ -1,3 +1,4 @@
+#pragma once
 typedef void (*function)(int argc, char **argv);
 
 typedef struct {

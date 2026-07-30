@@ -1,3 +1,4 @@
+#pragma once
 #include <drivers/uart.h>
 
 void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr);

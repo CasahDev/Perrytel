@@ -11,6 +11,7 @@
 #define TG0 (0b00 << 14)
 #define EDP1 (0b01 << 23)
 #define IPS ((uint64_t) 0b010 << 32)
+#define AP (0x1 << 6)
 
 #define MMU_ACTIVATION 0x1
 #define DATA_CACHE_ACTIVATION 0x1 << 2
@@ -21,7 +22,7 @@ Table L1;
 Table L2;
 
 void mmu_init() {
-    L1.pages[0] = (uint64_t) &L2 | TABLE_DESC;
+    L1.pages[0] = (uint64_t) &L2 | TABLE_DESC | AP;
 
     // Passe le UART en process DEVICE
     L1.pages[3] = 0xC0000000 | DESC | SHARABILITY | ACCESS_BIT | DEVICE;
@@ -30,6 +31,7 @@ void mmu_init() {
     for (int i = 0; i < 512; i++) {
         L2.pages[i] = i * ((uint64_t) 1 << 21) | DESC | SHARABILITY | ACCESS_BIT;
         if (i > 503) L2.pages[i] |= DEVICE;
+        else if (i >= 1) L2.pages[i] |= AP;
     }
 
     __asm volatile("msr TCR_EL1, %0" :: "r" (T0SZ | IRGN0 | ORGN0 | SH0 | TG0 | EDP1 | IPS));

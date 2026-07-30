@@ -1,9 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-
-extern uint8_t __end;
 
 struct block_meta {
     unsigned int size;
