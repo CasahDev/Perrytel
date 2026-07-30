@@ -19,4 +19,15 @@ void sd_init() {
     control1 |= GLOBAL_RESET;
     mmio_write(EMMC, CONTROL1_POS, control1);
     while ((mmio_read(EMMC, CONTROL1_POS) >> 24 & 0x1) == 1) {}
+
+    control1 = mmio_read(EMMC, CONTROL1_POS);
+    control1 |= INTERNAL_CLOCK_ENABLE;
+    control1 &= ~(0xFF << 8);
+    control1 |= CLOCK_DEVISER;
+    mmio_write(EMMC, CONTROL1_POS, control1);
+    while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
+
+    control1 = mmio_read(EMMC, CONTROL1_POS);
+    control1 |= SD_CLOCK_ENABLE;
+    mmio_write(EMMC, CONTROL1_POS, control1);
 }
