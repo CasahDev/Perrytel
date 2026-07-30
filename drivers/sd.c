@@ -27,6 +27,12 @@
 //Check la tension de la carte
 #define CMD8 (8 << 24 | RESPONSE)
 
+// Définie la taille des blocks de mémoire que l'on gère
+#define CMD16 (16 << 24 | RESPONSE)
+
+// Lire un block de donnée
+#define CMD17 (17 << 24 | RESPONSE)
+
 // Commande spéciale pour négocier le support de la haute capacité
 #define ACMD41 (41 << 24 | RESPONSE)
 
@@ -36,12 +42,14 @@
 #define NO_ARGS 0x0
 #define HCS_OCR (0x1 << 30 | 0xFF8000)
 #define TENSION_TEST 0x1AA
+#define BLOCK_SIZE 512
 
 #define GLOBAL_RESET 1 << 24
 #define INTERNAL_CLOCK_ENABLE 0x1
 #define INTERNAL_CLOCK_STABLE 0x1 << 1
 #define SD_CLOCK_ENABLE 0x1 << 2
 #define CLOCK_DIVISOR 0x7C << 8
+#define HIGH_CLOCK_DIVISOR 2 << 8
 
 void send_command(uint32_t cmdtm, uint32_t args) {
     mmio_write(EMMC, ARG1, args);
@@ -91,7 +99,16 @@ void sd_init() {
 
         send_command(CMD3, NO_ARGS);
 
-        const uint32_t rca = mmio_read(EMMC, RESP0) >> 16;
+        const uint32_t rca = mmio_read(EMMC, RESP0);
         send_command(CMD7, rca);
+
+        send_command(CMD16, BLOCK_SIZE);
+
+
+        control1 = mmio_read(EMMC, CONTROL1_POS);
+        control1 &= ~(0xFF << 8);
+        control1 |= HIGH_CLOCK_DIVISOR;
+        mmio_write(EMMC, CONTROL1_POS, control1);
+        while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
     }
 }
