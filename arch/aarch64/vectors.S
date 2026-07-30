@@ -69,7 +69,7 @@ vectors:
     ventry fiq_invalid_el1h
     ventry error_invalid_el1h
     ventry sync_invalid_el0_64
-    ventry irq_invalid_el0_64
+    ventry irq_handler_el1h
     ventry fiq_invalid_el0_64
     ventry error_invalid_el0_64
     ventry sync_invalid_el0_32
@@ -97,7 +97,7 @@ fiq_invalid_el1h:    handle_invalid_entry 6
 error_invalid_el1h:  handle_invalid_entry 7
 
 sync_invalid_el0_64:  handle_invalid_entry 8
-irq_invalid_el0_64:   handle_invalid_entry 9
+// irq_invalid_el0_64 utilise irq_handler_el1h pour l'instant
 fiq_invalid_el0_64:   handle_invalid_entry 10
 error_invalid_el0_64: handle_invalid_entry 11
 
