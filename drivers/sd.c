@@ -5,9 +5,27 @@
 #include <drivers/sd.h>
 
 #include <kernel/mmio.h>
+#define CONTROL1_POS 0x2C
+#define ARG1 0x08
+#define CMDTM 0x0C
+#define INTERRUPT 0x30
+#define RESP0 0x10
+
+#define RESPONSE 0x02 << 16
+#define NO_RESPONSE 0x00 << 16
+
+#define CMD2 (2 << 24 | RESPONSE)
+#define CMD3 (3 << 24 | RESPONSE)
+#define CMD7 (7 << 24 | RESPONSE)
+#define CMD8 (8 << 24 | RESPONSE)
+#define ACMD41 (41 << 24 | RESPONSE)
+#define CMD55 (55 << 24 | RESPONSE)
+
+#define NO_ARGS 0x0
+#define HCS_OCR (0x1 << 30 | 0xFF8000)
+#define TENSION_TEST 0x1AA
 
 #define GLOBAL_RESET 1 << 24
-#define CONTROL1_POS 0x2C
 #define INTERNAL_CLOCK_ENABLE 0x1
 #define INTERNAL_CLOCK_STABLE 0x1 << 1
 #define SD_CLOCK_ENABLE 0x1 << 2
@@ -20,6 +38,7 @@ void sd_init() {
     mmio_write(EMMC, CONTROL1_POS, control1);
     while ((mmio_read(EMMC, CONTROL1_POS) >> 24 & 0x1) == 1) {}
 
+    // Négotiation horloge controlleur
     control1 = mmio_read(EMMC, CONTROL1_POS);
     control1 |= INTERNAL_CLOCK_ENABLE;
     control1 &= ~(0xFF << 8);
@@ -30,4 +49,20 @@ void sd_init() {
     control1 = mmio_read(EMMC, CONTROL1_POS);
     control1 |= SD_CLOCK_ENABLE;
     mmio_write(EMMC, CONTROL1_POS, control1);
+
+    // Réinitialisation connexion carte SD
+    mmio_write(EMMC, ARG1, NO_ARGS);
+    mmio_write(EMMC, CMDTM, 0x0 << 24);
+
+    // SEND_IF_COND
+    mmio_write(EMMC, ARG1, TENSION_TEST);
+    mmio_write(EMMC, CMDTM, CMD8);
+
+    while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+
+    mmio_write(EMMC, INTERRUPT, 0x1);
+
+    if (mmio_read(EMMC, RESP0) == TENSION_TEST) {
+
+    }
 }
