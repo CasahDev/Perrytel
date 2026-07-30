@@ -3,6 +3,7 @@
 #include <kernel/gic.h>
 #include <drivers/timer.h>
 #include <kernel/exception.h>
+#include <kernel/user.h>
 
 #include <kernel/mmu.h>
 
@@ -26,13 +27,10 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_interrupt(153, uart_handler);
     timer_init();
     register_interrupt(27, timer_handler);
+
     uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
 
     uart_puts("Perry -> ");
 
-
-    while(1) {
-        execute_command();
-        __asm volatile("wfe");
-    }
+    user_mode();
 }
