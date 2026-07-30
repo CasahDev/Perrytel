@@ -10,6 +10,8 @@
 #define CMDTM 0x0C
 #define INTERRUPT 0x30
 #define RESP0 0x10
+#define STATUS 0x24
+#define DATA 0x20
 
 #define RESPONSE 0x02 << 16
 #define NO_RESPONSE 0x00 << 16
@@ -111,4 +113,18 @@ void sd_init() {
         mmio_write(EMMC, CONTROL1_POS, control1);
         while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
     }
+}
+
+void sd_read_block(uint32_t sector, uint8_t *buffer) {
+    send_command(CMD17, sector);
+
+    while ((mmio_read(EMMC, STATUS) >> 11 & 0x1) == 0) {}
+
+    for (int i = 0; i < 128; i++) {
+        uint32_t data = mmio_read(EMMC, DATA);
+        ((uint32_t *)buffer)[i] = data;
+    }
+
+    while ((mmio_read(EMMC, INTERRUPT) >> 1 & 0x1) == 0) { }
+    mmio_write(EMMC, INTERRUPT, 0x2);
 }
