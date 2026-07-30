@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 #ifdef QEMU
 #define GIC 0xFF840000
