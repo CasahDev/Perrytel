@@ -15,6 +15,6 @@ void user_mode() {
 
 void user_main_entry() {
     while(1) {
-        __asm volatile("wfe");
+
     }
 }
