@@ -14,7 +14,8 @@
 #define STATUS 0x24
 #define DATA 0x20
 
-#define RESPONSE 0x02 << 16
+#define RESPONSE 0x1A << 16
+#define RESPONSE_R3 0x02 << 16
 #define NO_RESPONSE 0x00 << 16
 
 
@@ -34,10 +35,10 @@
 #define CMD16 (16 << 24 | RESPONSE)
 
 // Lire un block de donnée
-#define CMD17 (17 << 24 | RESPONSE)
+#define CMD17 (17 << 24 | 1 << 21 | 1 << 4 | RESPONSE)
 
 // Commande spéciale pour négocier le support de la haute capacité
-#define ACMD41 (41 << 24 | RESPONSE)
+#define ACMD41 (41 << 24 | RESPONSE_R3)
 
 // Préviens la carte sd de l'utilisation d'une commande spéciale
 #define CMD55 (55 << 24 | RESPONSE)
@@ -83,43 +84,51 @@ void sd_init() {
     control1 |= SD_CLOCK_ENABLE;
     mmio_write(EMMC, CONTROL1_POS, control1);
 
+    // Besoin d'attendre un peu pour initialiser la carte SD
+    for (int i = 0; i < 10000; i++) {
+    }
+
     // Réinitialisation connexion carte SD
     mmio_write(EMMC, ARG1, NO_ARGS);
     mmio_write(EMMC, CMDTM, 0x0 << 24);
 
+    // Masques d'interruption
+    mmio_write(EMMC, 0x34, 0xFFFFFFFF);
+    mmio_write(EMMC, 0x38, 0xFFFFFFFF);
+
     // SEND_IF_COND
     send_command(CMD8, TENSION_TEST);
 
-    while (mmio_read(EMMC, INTERRUPT) == 0x0){}
+    send_command(0, NO_ARGS);
 
-    mmio_write(EMMC, INTERRUPT, 0x1);
+    while ((mmio_read(EMMC, RESP0) >> 31 & 0x1) == 0x0) {
+        send_command(CMD55, NO_ARGS);
 
-    if (mmio_read(EMMC, RESP0) == TENSION_TEST) {
-        while ((mmio_read(EMMC, RESP0) >> 31 & 0x1)== 0x0) {
-            send_command(CMD55, NO_ARGS);
-
-            send_command(ACMD41, HCS_OCR);
+        send_command(ACMD41, HCS_OCR);
+        for (int i = 0; i < 100000; i++) {
         }
-
-        send_command(CMD2, NO_ARGS);
-
-        send_command(CMD3, NO_ARGS);
-
-        const uint32_t rca = mmio_read(EMMC, RESP0);
-        send_command(CMD7, rca);
-
-        send_command(CMD16, BLOCK_SIZE);
-
-
-        control1 = mmio_read(EMMC, CONTROL1_POS);
-        control1 &= ~(0xFF << 8);
-        control1 |= HIGH_CLOCK_DIVISOR;
-        mmio_write(EMMC, CONTROL1_POS, control1);
-        while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
     }
+
+    send_command(CMD2, NO_ARGS);
+
+    send_command(CMD3, NO_ARGS);
+
+    const uint32_t rca = mmio_read(EMMC, RESP0) & 0xFFFF0000;
+
+    send_command(CMD7, rca);
+
+    send_command(CMD16, BLOCK_SIZE);
+
+    control1 = mmio_read(EMMC, CONTROL1_POS);
+    control1 &= ~(0xFF << 8);
+    control1 |= HIGH_CLOCK_DIVISOR;
+    mmio_write(EMMC, CONTROL1_POS, control1);
+    while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
+
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {
+    mmio_write(EMMC, 0x04, (1 << 16) | 512);
     send_command(CMD17, sector);
 
     while ((mmio_read(EMMC, STATUS) >> 11 & 0x1) == 0) {

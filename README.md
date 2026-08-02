@@ -9,7 +9,7 @@ Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des in
 - [ ] EMMC/SD Host
 - [ ] Système de fichiers
 - [ ] Drivers ethernets
- 
+
 ## Arborescence de fichiers
 ```
 Perrytel/
@@ -28,3 +28,11 @@ Perrytel/
 - 🤖: Patch de bugs
 - 💫: Ajout de features
 - 🧾: Ajout de documentation
+
+## Initialisation carte SD virtuelle
+
+```shell
+qemu-img create sd.img 64M
+parted -s sd.img mklabel msdos
+parted -s sd.img mkpart primary fat32 2048s 100%
+```

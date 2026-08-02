@@ -40,14 +40,20 @@ Le développement du pilote a été découpé en plusieurs phases d'ingénierie 
 ### 3. Ressources et Fichiers Clés
 - **Pilote et Définitions** : [drivers/sd.c](file:///home/sacha/Dev/PerryTel/drivers/sd.c), [include/drivers/sd.h](file:///home/sacha/Dev/PerryTel/include/drivers/sd.h).
 - **Interface MMIO** : [include/kernel/mmio.h](file:///home/sacha/Dev/PerryTel/include/kernel/mmio.h).
-- **Emplacement Matériel MMIO** : `0xFE340000` (EMMC2 sur Raspberry Pi 4, configuré en Device nGnRnE dans la MMU).
+- **Emplacement Matériel MMIO** : `0xFE300000` (Contrôleur SDHCI principal du Broadcom BCM2711, raccordé sous QEMU et sur le matériel, configuré en Device nGnRnE dans la MMU).
+- **Configuration des Masques d'Interruptions** : Activation complète des voyants de statut et de signalement aux registres `0x34` (`IRPT_MASK`) et `0x38` (`IRPT_EN`) avec la valeur `0xFFFFFFFF`.
+- **Lecture de Secteurs et Partitionnement MBR/FAT32** :
+  - Configuration du registre de taille de bloc `0x04` (`BLKSIZECNT`) avec la valeur `(1 << 16) | 512` (`0x00010200`).
+  - Ajout des drapeaux de transfert de données `1 << 21` (*Data Present*) et `1 << 4` (*Read Direction*) sur la commande `CMD17`.
+  - Lecture réussie du secteur 0 MBR, extraction du type de partition `0x0C` (FAT32 LBA) et lecture du secteur de démarrage FAT32 (secteur 2048).
 
 ---
 
-### 4. Étapes futures (Roadmap)
-Avec la couche physique de lecture de blocs entièrement opérationnelle :
-- [ ] **Décodeur de Table de Partitions (MBR)** : Lecture du secteur 0 pour localiser le début de la partition principale FAT32.
-- [ ] **Pilote de Système de Fichiers (FAT32)** : Analyse du secteur de démarrage (Boot Sector), du répertoire racine (Root Directory) et de la chaîne de clusters.
+### 4. Validation et Prochaines Étapes
+Le pilote de bloc SDHCI/EMMC est **100 % opérationnel et validé sous QEMU**. La valeur hexadécimale `0x0C` extraite de la table de partitions MBR a été imprimée avec succès sur le terminal UART.
+
+- [x] **Décodeur de Table de Partitions (MBR)** : Lecture du secteur 0 et extraction du secteur de démarrage de la partition FAT32 (secteur 2048).
+- [ ] **Pilote de Système de Fichiers (FAT32)** : Décodage du secteur de démarrage BPB (Volume Boot Record), du répertoire racine (Root Directory) et des clusters.
 - [ ] **Commandes Shell de Fichiers (`ls`, `cat`)** : Permettre à l'utilisateur de lister et de lire le contenu des fichiers de la carte SD depuis le terminal PerryTel OS.
 
 ---
