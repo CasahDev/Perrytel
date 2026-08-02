@@ -5,6 +5,7 @@
 #include <drivers/sd.h>
 
 #include <kernel/mmio.h>
+#include <kernel/memory.h>
 
 #define CONTROL1_POS 0x2C
 #define ARG1 0x08
@@ -55,6 +56,8 @@
 #define SD_CLOCK_ENABLE 0x1 << 2
 #define CLOCK_DIVISOR 0x7C << 8
 #define HIGH_CLOCK_DIVISOR 2 << 8
+
+#define BOOT_FLAG 0x1BE
 
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
@@ -125,6 +128,14 @@ void sd_init() {
     mmio_write(EMMC, CONTROL1_POS, control1);
     while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
 
+    uint8_t *buffer = kalloc(512);
+    sd_read_block(0, buffer);
+
+    const uint8_t file_system = buffer[BOOT_FLAG + 4];
+    const uint32_t starting_sector = *(uint32_t *) &buffer[BOOT_FLAG + 8];
+    const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + 12];
+
+    sd_read_block(starting_sector, buffer);
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {

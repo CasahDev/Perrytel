@@ -2,3 +2,4 @@ build/
 qemu-build/
 .vscode/
 .clangd
+/sd.img
