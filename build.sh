@@ -38,5 +38,5 @@ aarch64-linux-gnu-objcopy -O binary $BUILD_DIR/kernel8.elf $BUILD_DIR/kernel8.im
 echo "Build completed. Output: $BUILD_DIR/kernel8.img"
 
 if [ "$1" == "qemu" ]; then
-    qemu-system-aarch64 -M raspi4b -kernel $BUILD_DIR/kernel8.img -serial stdio -display none
+    qemu-system-aarch64 -M raspi4b -kernel $BUILD_DIR/kernel8.img -serial stdio -display none -drive file=sd.img,if=sd,format=raw
 fi
