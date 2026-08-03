@@ -49,3 +49,24 @@ uint32_t get_sectors_per_cluster() {
 uint32_t get_root_sector() {
     return root_sector;
 }
+
+void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
+    uint8_t char_count = 0;
+    for (int i = 0; i < 8; i++) {
+        if (entry->name[i] != ' ') {
+            out_name[char_count] = entry->name[i];
+            char_count++;
+        }
+    }
+
+    if (entry->name[8] != 0x00 | entry->name[9] != 0x00 | entry->name[10] != 0x00) {
+        out_name[char_count] = '.';
+        char_count++;
+        for (int i = 0; i < 3; i++) {
+            if (entry->name[8 + i] != 0x00) {
+                out_name[char_count] = entry->name[8 + i];
+                char_count++;
+            }
+        }
+    }
+}

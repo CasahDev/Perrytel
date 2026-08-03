@@ -136,3 +136,5 @@ uint32_t get_starting_data_sector();
 uint32_t get_sectors_per_cluster();
 
 uint32_t get_root_sector();
+
+void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
