@@ -61,7 +61,7 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
         }
     }
 
-    if (entry->name[8] != 0x00 || entry->name[9] != 0x00 || entry->name[10] != 0x00) {
+    if (entry->name[8] != ' ' || entry->name[9] != ' ' || entry->name[10] != ' ') {
         out_name[char_count] = '.';
         char_count++;
         for (int i = 0; i < 3; i++) {
