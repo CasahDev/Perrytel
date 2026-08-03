@@ -74,6 +74,8 @@ void cat(int argc, char **argv) {
             }
         }
     }
+
+    kfree(buffer);
 }
 
 static Command list[] = {
