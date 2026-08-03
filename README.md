@@ -35,4 +35,5 @@ Perrytel/
 qemu-img create sd.img 64M
 parted -s sd.img mklabel msdos
 parted -s sd.img mkpart primary fat32 2048s 100%
+mkfs.vfat -F 32 --offset=2048 sd.img 
 ```

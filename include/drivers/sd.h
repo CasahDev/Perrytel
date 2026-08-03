@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 #define EMMC 0xFE300000
 

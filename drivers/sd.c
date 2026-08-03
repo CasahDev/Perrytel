@@ -3,6 +3,7 @@
 //
 #include <stdint.h>
 #include <drivers/sd.h>
+#include <drivers/fat32.h>
 
 #include <kernel/mmio.h>
 #include <kernel/memory.h>
@@ -136,6 +137,7 @@ void sd_init() {
     const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + 12];
 
     sd_read_block(starting_sector, buffer);
+    fat32_init(starting_sector, buffer);
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {
