@@ -47,9 +47,10 @@ void ls(int argc, char **argv) {
         }
 
         if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
-            for (int j = 0; j < 11; j++) {
-                uart_putc(entry->name[j]);
-            }
+            void *file_name = kalloc(11);
+            fat32_get_name(entry, file_name);
+            uart_puts(file_name);
+            kfree(file_name);
             uart_puts("\r\n");
         }
     }
