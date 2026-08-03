@@ -7,7 +7,7 @@
 #include <kernel/shell.h>
 #include <kernel/string.h>
 
-const int command_number = 5;
+const int command_number = 6;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
@@ -57,12 +57,32 @@ void ls(int argc, char **argv) {
     kfree(buffer);
 }
 
+void cat(int argc, char **argv) {
+    if (argc != 2) return;
+
+    void *buffer = kalloc(512);
+    sd_read_block(get_root_sector(), buffer);
+
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+        if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
+            void *file_name = kalloc(11);
+            fat32_get_name(entry, file_name);
+            if (strcmp(file_name, argv[1]) != 0) {
+                uart_puts(fat32_read_file(entry));
+                return;
+            }
+        }
+    }
+}
+
 static Command list[] = {
     {.name = "help", .run = help},
     {.name = "time", .run = time_command},
     {.name = "echo", .run = echo},
     {.name = "meminfo", .run = meminfo},
-    {.name = "ls", .run = ls}
+    {.name = "ls", .run = ls},
+    {.name = "cat", .run = cat}
 };
 
 void exec(char *command) {
