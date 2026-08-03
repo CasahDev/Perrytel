@@ -123,4 +123,6 @@ typedef struct __attribute__((packed)) fat32_dir_entry {
     uint32_t size;
 } fat32_dir_entry;
 
-void fat32_init(uint32_t starting_sector, uint8_t *cluster);
+void fat32_init(uint32_t starting_sector, const uint8_t *cluster);
+
+char *fat32_read_file(const fat32_dir_entry *entry);
