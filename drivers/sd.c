@@ -60,6 +60,8 @@
 
 #define BOOT_FLAG 0x1BE
 
+uint8_t is_sdhc;
+
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
     mmio_write(EMMC, CMDTM, cmdtm);
@@ -113,6 +115,8 @@ void sd_init() {
         }
     }
 
+    is_sdhc = (mmio_read(EMMC, RESP0) >> 30 & 0x1);
+
     send_command(CMD2, NO_ARGS);
 
     send_command(CMD3, NO_ARGS);
@@ -142,7 +146,7 @@ void sd_init() {
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {
     mmio_write(EMMC, 0x04, (1 << 16) | 512);
-    send_command(CMD17, sector);
+    send_command(CMD17, is_sdhc ? sector : sector * 512);
 
     while ((mmio_read(EMMC, STATUS) >> 11 & 0x1) == 0) {
     }
