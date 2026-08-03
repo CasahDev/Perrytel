@@ -4,10 +4,10 @@ Système d'exploitation pour Raspberry PI 4 ayant pour but de communiquer des in
 ## Features
 - [x] Intéruptions
 - [x] Timers
-- [ ] Drivers clavier minitel
-- [ ] Multi processes
-- [ ] EMMC/SD Host
-- [ ] Système de fichiers
+- [x] Drivers clavier minitel
+- [x] Multi processes
+- [x] EMMC/SD Host
+- [x] Système de fichiers
 - [ ] Drivers ethernets
 
 ## Arborescence de fichiers

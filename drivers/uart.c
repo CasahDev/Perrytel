@@ -11,6 +11,10 @@ volatile unsigned char tx_buffer[1024];
 volatile uint32_t tx_head;
 volatile uint32_t tx_tail;
 
+volatile unsigned char rx_buffer[1024];
+volatile uint32_t rx_head;
+volatile uint32_t rx_tail;
+
 char shell_buffer[256];
 volatile int shell_index;
 volatile bool command_ready = false;
@@ -77,10 +81,13 @@ void uart_init(int raspi)
 void uart_putc(unsigned char c)
 {
     mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) & ~(1 << 5));
-    if(tx_head == tx_tail) {
-        tx_buffer[tx_head] = c;
-        tx_head = (1 + tx_head) % 1024;
-        mmio_write(MMIO_BASE, UART0_DR, c);
+    int was_empty = (tx_head == tx_tail);
+
+    tx_buffer[tx_head] = c;
+    tx_head = (1 + tx_head) % 1024;
+
+    if (was_empty) {
+        mmio_write(MMIO_BASE, UART0_DR, tx_buffer[tx_tail]); // ou mmio_write(UART0_DR, c);
         tx_tail = (1 + tx_tail) % 1024;
     }
    mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) | (1 << 5));
@@ -113,22 +120,36 @@ void uart_put_hex(uint64_t hex) {
     uart_putc((unsigned char) '\n');
 }
 
+int uart_get_char_async() {
+    if (rx_head != rx_tail) {
+        char c = rx_buffer[rx_tail];
+        rx_tail = (rx_tail + 1) % 1024;
+        return c;
+    }
+    return -1;
+}
+
 void uart_handle_interrupt() {
     uint32_t mis = mmio_read(MMIO_BASE, UART0_MIS);
-    if ((mis & (1 << 4)) || (mis & (1 << 6))) {    
+    if ((mis & (1 << 4)) || (mis & (1 << 6))) {
         while(!(mmio_read(MMIO_BASE, UART0_FR) & (1 << 4))) {
             // 1. On récupère la touche (et ça acquitte l'interruption au niveau de l'UART)
             unsigned char c = mmio_read(MMIO_BASE, UART0_DR);
+
             if (c == '\r') {
                 uart_putc('\r');
                 uart_putc('\n');
                 shell_buffer[shell_index] = '\0';
                 command_ready = true;
+                execute_command();
             } else {
                 uart_putc(c);
                 shell_buffer[shell_index] = c;
                 shell_index = (shell_index + 1) % 256;
             }
+
+            rx_buffer[rx_head] = c;
+            rx_head = (rx_head + 1) % 1024;
         }
     }
     if (mis & (1 << 5) ) {
