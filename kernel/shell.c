@@ -28,8 +28,8 @@ void time_command(int argc, char **argv) {
 }
 
 void echo(int argc, char **argv) {
-    for (int i = 0; i < argc; i++) {
-        uart_puts(argv[i+1]);
+    for (int i = 1; i < argc; i++) {
+        uart_puts(argv[i]);
         uart_putc(' ');
     } 
 
@@ -81,10 +81,11 @@ void cat(int argc, char **argv) {
     }
 
     kfree(buffer);
+    uart_puts("\r\n");
 }
 
 void touch(int argc, char **argv) {
-     if (argc < 2 || argc > 3) return;
+    if (argc < 3) return;
 
     char *filename = argv[1];
     char *content = argv[2];
@@ -107,7 +108,7 @@ void exec(char *command) {
     
     if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
     for (int i = 0; i < command_number; i++) {
-        if (strcmp(argv[0], list[i].name)) {
+        if (strcmp(argv[0], list[i].name) != 0) {
             // Magie : on lance la fonction stockée dans la structure !
             list[i].run(argc, argv);
             return; // On a trouvé, on s'arrête

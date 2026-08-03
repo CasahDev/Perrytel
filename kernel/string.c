@@ -58,7 +58,7 @@ void itoa(int n, char *dist) {
         char temp = dist[start];
         dist[start] = dist[i-start-1];
         dist[i-start-1] = temp;
-    } 
+    }
 
     dist[i] = '\0';
 }
@@ -71,8 +71,13 @@ int strsplit(char *str, char **argv, int max_args) {
         if (str[i] == '"') {
             in_quote = !in_quote;
             str[i] = '\0';
+            if (in_quote) {
+                argv[argc] = &str[i + 1];
+                argc++;
+            }
+            i++;
         }
-        if (str[i] == ' ' && !in_quote) str[i] = '\0';
+        else if (str[i] == ' ' && !in_quote) str[i] = '\0';
         else if(i == 0 || str[i-1] == '\0'){
              argv[argc] = &str[i];
              argc++;

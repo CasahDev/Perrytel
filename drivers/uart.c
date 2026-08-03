@@ -1,9 +1,11 @@
-#include <drivers/uart.h>
-#include <stdint.h>
 #include <stdbool.h>
-#include <kernel/shell.h>
+#include <stdint.h>
 
+#include <drivers/uart.h>
+
+#include <kernel/memory.h>
 #include <kernel/mmio.h>
+#include <kernel/shell.h>
 
 static uint32_t MMIO_BASE;
 
@@ -169,6 +171,7 @@ void execute_command() {
 
     shell_index = 0;
     command_ready = false;
+    memset(shell_buffer, 0, 256);
 
     uart_puts("Perry -> ");
 }
