@@ -1,10 +1,13 @@
-#include <kernel/shell.h>
-#include <drivers/uart.h>
-#include <kernel/string.h>
+#include <drivers/fat32.h>
+#include <drivers/sd.h>
 #include <drivers/timer.h>
-#include <kernel/memory.h>
+#include <drivers/uart.h>
 
-const int command_number = 4;
+#include <kernel/memory.h>
+#include <kernel/shell.h>
+#include <kernel/string.h>
+
+const int command_number = 5;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
@@ -12,6 +15,7 @@ void help(int argc, char **argv) {
     uart_puts("time\r\n");
     uart_puts("echo\r\n");
     uart_puts("meminfo\r\n");
+    uart_puts("ls\r\n");
 }
 
 void time_command(int argc, char **argv) {
@@ -31,11 +35,34 @@ void echo(int argc, char **argv) {
     uart_putc('\n');
 }
 
+void ls(int argc, char **argv) {
+    void *buffer = kalloc(512);
+    sd_read_block(get_root_sector(), buffer);
+
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+
+        if (entry->attributes == 0x0F) {
+            uart_puts("debug 2");
+        }
+
+        if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
+            for (int j = 0; j < 11; j++) {
+                uart_putc(entry->name[j]);
+            }
+            uart_puts("\r\n");
+        }
+    }
+
+    kfree(buffer);
+}
+
 static Command list[] = {
     {.name = "help", .run = help},
     {.name = "time", .run = time_command},
     {.name = "echo", .run = echo},
-    {.name = "meminfo", .run = meminfo}
+    {.name = "meminfo", .run = meminfo},
+    {.name = "ls", .run = ls}
 };
 
 void exec(char *command) {
