@@ -78,5 +78,49 @@ typedef struct __attribute__((packed)) FSInfo {
     uint32_t trail_signature;
 } FSInfo;
 
+typedef struct __attribute__((packed)) fat32_dir_entry {
+    // 8 lettres + extension de 3 lettres
+    char name[11];
+    uint8_t attributes;
+
+    // Réservé pour Windows NT
+    uint8_t reserved;
+
+    // En centième de seconde
+    uint8_t creation_time_seconds;
+
+    /*
+    Secondes multipliées par 2
+    Hour  	5 bits
+    Minutes 	6 bits
+    Seconds 	5 bits
+    */
+    uint16_t creation_time;
+
+    /*
+    Year 	7 bits
+    Month 	4 bits
+    Day 	5 bits
+     */
+    uint16_t creation_date;
+
+    // Même format que la date de création
+    uint16_t last_accessed_date;
+
+    // Les 16 premiers bits du numéro de cluster du dossier
+    uint16_t cluster_entry_high;
+
+    // Même format que la creation_time
+    uint16_t last_edit_time;
+
+    // Même format que la date de création
+    uint16_t last_edit_date;
+
+    // Les 16 derniers bits du numéro de cluster du dossier
+    uint16_t cluster_entry_low;
+
+    // Taille en octets
+    uint32_t size;
+} fat32_dir_entry;
 
 void fat32_init(uint32_t starting_sector, uint8_t *cluster);
