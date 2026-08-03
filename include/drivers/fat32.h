@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-struct fat32_boot_sector {
+typedef struct __attribute__((packed)) fat32_boot_sector {
     // BPB
     uint8_t reserved[3];
     char oem_name[8];
@@ -20,7 +20,7 @@ struct fat32_boot_sector {
     uint8_t media_descriptor_type;
 
     // Toujours à 0 en FAT32
-    uint16_t sector_per_fat;
+    uint16_t reserved_sectors_per_fat;
     uint16_t sector_per_track;
     uint16_t heads_per_storage_media;
     uint32_t hidden_sector_count;
@@ -54,9 +54,9 @@ struct fat32_boot_sector {
 
     // 0xAA55
     uint16_t bootable_partition_signature;
-} __attribute__((packed));
+} fat32_boot_sector;
 
-struct FSInfo {
+typedef struct __attribute__((packed)) FSInfo {
     // Vaut 0x41615252 pour une structure FS info valide
     uint32_t lead_signature;
 
@@ -76,4 +76,7 @@ struct FSInfo {
 
     // Vaut 0xAA550000
     uint32_t trail_signature;
-} __attribute__((packed));
+} FSInfo;
+
+
+void fat32_init(uint32_t starting_sector, uint8_t *cluster);
