@@ -1,10 +1,10 @@
 #include <stdint.h>
-#include <drivers/uart.h>
-#include <kernel/gic.h>
-#include <drivers/timer.h>
-#include <kernel/exception.h>
-#include <kernel/user.h>
 #include <drivers/sd.h>
+#include <drivers/timer.h>
+#include <drivers/uart.h>
+#include <kernel/exception.h>
+#include <kernel/gic.h>
+#include <kernel/user.h>
 
 #include <kernel/mmu.h>
 

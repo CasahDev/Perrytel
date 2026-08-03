@@ -3,6 +3,7 @@
 //
 #include <stdint.h>
 #include <drivers/sd.h>
+#include <drivers/fat32.h>
 
 #include <kernel/mmio.h>
 #include <kernel/memory.h>
@@ -38,6 +39,9 @@
 // Lire un block de donnée
 #define CMD17 (17 << 24 | 1 << 21 | 1 << 4 | RESPONSE)
 
+// Demande a écrire dans un block de donnée
+#define CMD24 (24 << 24 | 1 << 21 | 0 << 4 | RESPONSE)
+
 // Commande spéciale pour négocier le support de la haute capacité
 #define ACMD41 (41 << 24 | RESPONSE_R3)
 
@@ -49,6 +53,7 @@
 #define TENSION_TEST 0x1AA
 #define BLOCK_SIZE 512
 #define RESET_SD_CARD 0x00 << 24
+#define BLKSIZECNT 0x04
 
 #define GLOBAL_RESET 1 << 24
 #define INTERNAL_CLOCK_ENABLE 0x1
@@ -58,6 +63,8 @@
 #define HIGH_CLOCK_DIVISOR 2 << 8
 
 #define BOOT_FLAG 0x1BE
+
+uint8_t is_sdhc;
 
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
@@ -112,6 +119,8 @@ void sd_init() {
         }
     }
 
+    is_sdhc = (mmio_read(EMMC, RESP0) >> 30 & 0x1);
+
     send_command(CMD2, NO_ARGS);
 
     send_command(CMD3, NO_ARGS);
@@ -136,11 +145,12 @@ void sd_init() {
     const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + 12];
 
     sd_read_block(starting_sector, buffer);
+    fat32_init(starting_sector, buffer);
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {
     mmio_write(EMMC, 0x04, (1 << 16) | 512);
-    send_command(CMD17, sector);
+    send_command(CMD17, is_sdhc ? sector : sector * 512);
 
     while ((mmio_read(EMMC, STATUS) >> 11 & 0x1) == 0) {
     }
@@ -148,6 +158,23 @@ void sd_read_block(const uint32_t sector, uint8_t *buffer) {
     for (int i = 0; i < 128; i++) {
         const uint32_t data = mmio_read(EMMC, DATA);
         ((uint32_t *) buffer)[i] = data;
+    }
+
+    while ((mmio_read(EMMC, INTERRUPT) >> 1 & 0x1) == 0) {
+    }
+    mmio_write(EMMC, INTERRUPT, 0x2);
+}
+
+void sd_write_block(uint32_t sector, const uint8_t *buffer) {
+    mmio_write(EMMC, BLKSIZECNT, 1 << 16 | 512);
+
+    send_command(CMD24, is_sdhc ? sector : sector * 512);
+
+    while ((mmio_read(EMMC, STATUS) >> 10 & 0x1) == 0) {
+    }
+
+    for (int i = 0; i < 128; i++) {
+        mmio_write(EMMC, DATA, ((uint32_t *)buffer)[i]);
     }
 
     while ((mmio_read(EMMC, INTERRUPT) >> 1 & 0x1) == 0) {
