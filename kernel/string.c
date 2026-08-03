@@ -64,10 +64,15 @@ void itoa(int n, char *dist) {
 }
 
 int strsplit(char *str, char **argv, int max_args) {
+    bool in_quote = false;
     unsigned long i = 0;
     int argc = 0;
     while (str[i] != '\0') {
-        if (str[i] == ' ') str[i] = '\0';
+        if (str[i] == '"') {
+            in_quote = !in_quote;
+            str[i] = '\0';
+        }
+        if (str[i] == ' ' && !in_quote) str[i] = '\0';
         else if(i == 0 || str[i-1] == '\0'){
              argv[argc] = &str[i];
              argc++;

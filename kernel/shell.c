@@ -7,7 +7,7 @@
 #include <kernel/shell.h>
 #include <kernel/string.h>
 
-const int command_number = 6;
+const int command_number = 7;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
@@ -16,6 +16,8 @@ void help(int argc, char **argv) {
     uart_puts("echo\r\n");
     uart_puts("meminfo\r\n");
     uart_puts("ls\r\n");
+    uart_puts("cat\r\n");
+    uart_puts("touch\r\n");
 }
 
 void time_command(int argc, char **argv) {
@@ -81,13 +83,22 @@ void cat(int argc, char **argv) {
     kfree(buffer);
 }
 
+void touch(int argc, char **argv) {
+     if (argc < 2 || argc > 3) return;
+
+    char *filename = argv[1];
+    char *content = argv[2];
+    fat32_create_file(filename, content);
+}
+
 static Command list[] = {
     {.name = "help", .run = help},
     {.name = "time", .run = time_command},
     {.name = "echo", .run = echo},
     {.name = "meminfo", .run = meminfo},
     {.name = "ls", .run = ls},
-    {.name = "cat", .run = cat}
+    {.name = "cat", .run = cat},
+    {.name = "touch", .run = touch}
 };
 
 void exec(char *command) {
