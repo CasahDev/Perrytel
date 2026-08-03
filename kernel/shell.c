@@ -69,7 +69,9 @@ void cat(int argc, char **argv) {
             void *file_name = kalloc(11);
             fat32_get_name(entry, file_name);
             if (strcmp(file_name, argv[1]) != 0) {
-                uart_puts(fat32_read_file(entry));
+                char *content = fat32_read_file(entry);
+                uart_puts(content);
+                kfree(content);
                 return;
             }
         }
