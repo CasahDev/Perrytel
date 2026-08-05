@@ -58,3 +58,22 @@ syscall_callback_type get_syscall_handler(uint32_t syscall_id) {
 void register_syscall_handler(const uint32_t syscall_id, const syscall_callback_type handler) {
     syscall_handlers[syscall_id] = handler;
 }
+
+#ifdef AARCH64
+uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    register uint64_t x8 __asm__("x8") = syscall;
+    register uint64_t x0 __asm__("x0") = arg0;
+    register uint64_t x1 __asm__("x1") = arg1;
+    register uint64_t x2 __asm__("x2") = arg2;
+    __asm volatile("svc #0" : "+r" (x0) : "r"(x8), "r"(x1), "r"(x2) : "memory");
+
+    return x0;
+}
+#endif
+
+uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    const char *text = (const char *)arg1;
+    uart_puts(text);
+
+    return 0;
+}
