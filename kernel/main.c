@@ -1,12 +1,14 @@
 #include <stdint.h>
+
 #include <drivers/sd.h>
 #include <drivers/timer.h>
 #include <drivers/uart.h>
+
 #include <kernel/exception.h>
 #include <kernel/gic.h>
-#include <kernel/user.h>
-
 #include <kernel/mmu.h>
+#include <kernel/syscall.h>
+#include <kernel/user.h>
 
 
 #ifdef AARCH64
@@ -30,11 +32,8 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     timer_init();
     register_interrupt(27, timer_handler);
 
-    uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
-
-    uart_puts("Perry -> ");
-
+    init_syscall_handler();
+    register_syscall_handler(64, uart_write);
     sd_init();
-
     user_mode();
 }

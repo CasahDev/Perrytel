@@ -37,4 +37,6 @@ void uart_handle_interrupt();
 int uart_get_char_async();
 void execute_command(void);
 
+void printf(char *str);
+
 #endif
