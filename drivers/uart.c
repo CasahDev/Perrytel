@@ -6,6 +6,8 @@
 #include <kernel/memory.h>
 #include <kernel/mmio.h>
 #include <kernel/shell.h>
+#include <kernel/string.h>
+#include <kernel/syscall.h>
 
 static uint32_t MMIO_BASE;
 
@@ -174,4 +176,8 @@ void execute_command() {
     memset(shell_buffer, 0, 256);
 
     uart_puts("Perry -> ");
+}
+
+void printf(char *str) {
+    syscall3(64, 1, (uint64_t) str, strlen(str));
 }
