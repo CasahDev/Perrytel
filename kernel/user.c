@@ -2,6 +2,8 @@
 // Created by sacha on 30/07/2026.
 //
 
+#include <drivers/uart.h>
+
 #include <kernel/user.h>
 #include <kernel/memory.h>
 
@@ -14,6 +16,9 @@ void user_mode() {
 }
 
 void user_main_entry() {
+    printf("Perrytel OS (AArch64) - Kernel Loaded\r\n");
+
+    printf("Perry -> ");
     while(1) {
         __asm volatile("wfe");
     }
