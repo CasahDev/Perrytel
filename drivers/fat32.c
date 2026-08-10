@@ -12,6 +12,7 @@ static uint32_t starting_fat_sector;
 static uint32_t starting_data_sector;
 static uint32_t sectors_per_cluster;
 static uint32_t root_sector;
+static uint32_t current_directory_cluster = 2;
 
 void fat32_init(const uint32_t starting_sector, const uint8_t *cluster) {
     const fat32_boot_sector *sector = (const fat32_boot_sector *) cluster;
@@ -64,6 +65,10 @@ uint32_t get_sectors_per_cluster() {
 
 uint32_t get_root_sector() {
     return root_sector;
+}
+
+uint32_t get_current_directory() {
+    return current_directory_cluster;
 }
 
 uint32_t fat32_allocate_cluster() {
@@ -166,6 +171,76 @@ void fat32_create_file(char *file_name, char *content) {
     kfree(root_buffer);
 
     kfree(file_content);
+}
 
-    kfree(buffer_fat);
+void fat32_create_directory(char *directory) {
+    const uint32_t global_cluster = fat32_allocate_cluster();
+    const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
+
+    // Reset du contenu de la carte a l'emplacement
+    void *dir_content = kalloc(512);
+    memset(dir_content, 0, 512);
+
+    // Création des fichiers . et ..
+
+    fat32_dir_entry *entries = (fat32_dir_entry *) dir_content;
+    fat32_dir_entry *new_dir = &entries[0];
+    new_dir->name[0] = '.';
+
+    for (int i = 0; i < 10; i++) {
+        new_dir->name[i+1] = ' ';
+    }
+
+    new_dir->attributes = 0x10;
+    new_dir->cluster_entry_high = global_cluster >> 16;
+    new_dir->cluster_entry_low = global_cluster & 0xFFFF;
+
+    fat32_dir_entry *parent_dir = &entries[1];
+    parent_dir->name[0] = '.';
+    parent_dir->name[1] = '.';
+
+    for (int i = 0; i < 9; i++) {
+        parent_dir->name[i+2] = ' ';
+    }
+
+    parent_dir->attributes = 0x10;
+
+    if (current_directory_cluster == 2) {
+        parent_dir->cluster_entry_high = 0;
+        parent_dir->cluster_entry_low = 0;
+    } else {
+        parent_dir->cluster_entry_high = current_directory_cluster >> 16;
+        parent_dir->cluster_entry_low = current_directory_cluster & 0xFFFF;
+    }
+
+    sd_write_block(lba_sector, dir_content);
+
+    kfree(dir_content);
+
+    void *parent_directory = kalloc(512);
+    uint32_t parent_sector = starting_data_sector + (current_directory_cluster - 2) * sectors_per_cluster;
+    sd_read_block(parent_sector, parent_directory);
+
+    fat32_dir_entry *parent_entries = parent_directory;
+    int slot = 0;
+    while (slot < 16 && (uint8_t) parent_entries[slot].name[0] != 0x00 && (uint8_t) parent_entries[slot].name[0] != 0xE5) {
+        slot++;
+    }
+
+    fat32_dir_entry *entry = &parent_entries[slot];
+    memset(entry->name, ' ', 11);
+
+    entry->attributes = 0x10;
+    entry->cluster_entry_high = global_cluster >> 16;
+    entry->cluster_entry_low = global_cluster & 0xFFFF;
+    entry->size = 0;
+
+    uint8_t max = strlen(directory) > 11 ? 11 : strlen(directory);
+
+    for (int i = 0; i < max; i++) {
+        entry->name[i] = directory[i];
+    }
+
+    sd_write_block(parent_sector, parent_directory);
+    kfree(parent_directory);
 }
