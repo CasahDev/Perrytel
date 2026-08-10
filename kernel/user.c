@@ -15,7 +15,7 @@ void user_mode() {
     switch_to_user_mode(user_main_entry, stack_top);
 }
 
-void user_main_entry() {
+__attribute__((section(".user_text"))) void user_main_entry() {
     printf("Perrytel OS (AArch64) - Kernel Loaded\r\n");
 
     printf("Perry -> ");
