@@ -147,4 +147,4 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
 
 void fat32_create_file(char *file_name, char *content);
 
-void fat32_create_directory(char *directory);
+void fat32_create_directory(const char *directory);
