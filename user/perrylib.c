@@ -2,7 +2,6 @@
 // Created by sacha on 10/08/2026.
 //
 #include <perrylib.h>
-#include <kernel/string.h>
 
 
 #ifdef AARCH64
@@ -35,7 +34,7 @@ uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 #endif
 
 void printf(char *str) {
-    syscall3(SYS_WRITE, 1, (uint64_t) str, strlen(str));
+    syscall2(SYS_WRITE, 1, (uint64_t) str);
 }
 
 void exit(const uint32_t code) {
