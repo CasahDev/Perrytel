@@ -66,6 +66,30 @@ uint32_t get_root_sector() {
     return root_sector;
 }
 
+uint32_t fat32_allocate_cluster() {
+    void *buffer_fat = kalloc(512);
+    sd_read_block(starting_fat_sector, buffer_fat);
+    uint32_t *fat = buffer_fat;
+
+    uint32_t cluster = 3;
+    uint32_t sector = 0;
+    while (fat[cluster] != 0x00000000) {
+        cluster++;
+        if (cluster == 128) {
+            sector++;
+            cluster = 0;
+            sd_read_block(starting_fat_sector + sector, buffer_fat);
+            fat = buffer_fat;
+        }
+    }
+
+    fat[cluster] = 0x0FFFFFFF;
+    sd_write_block(starting_fat_sector + sector, buffer_fat);
+    kfree(buffer_fat);
+
+    return cluster + sector * 128;
+}
+
 void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
     uint8_t char_count = 0;
     for (int i = 0; i < 8; i++) {
@@ -89,26 +113,7 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
 }
 
 void fat32_create_file(char *file_name, char *content) {
-    void *buffer_fat = kalloc(512);
-    sd_read_block(starting_fat_sector, buffer_fat);
-    uint32_t *fat = buffer_fat;
-
-    uint8_t cluster = 3;
-    uint8_t sector = 0;
-    while (fat[cluster] != 0x00000000) {
-        cluster++;
-        if (cluster == 128) {
-            sector++;
-            cluster = 0;
-            sd_read_block(starting_fat_sector + sector, buffer_fat);
-            fat = buffer_fat;
-        }
-    }
-
-    fat[cluster] = 0x0FFFFFFF;
-    sd_write_block(starting_fat_sector + sector, buffer_fat);
-
-    const uint32_t global_cluster = sector * 128 + cluster;
+    const uint32_t global_cluster = fat32_allocate_cluster();
     const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
 
     char *file_content = kalloc(512);
