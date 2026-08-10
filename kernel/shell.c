@@ -5,7 +5,7 @@
 
 #include <kernel/memory.h>
 #include <kernel/shell.h>
-#include <kernel/string.h>
+#include <string.h>
 
 const int command_number = 7;
 
@@ -75,8 +75,11 @@ void cat(int argc, char **argv) {
                 char *content = fat32_read_file(entry);
                 uart_puts(content);
                 kfree(content);
+                kfree(file_name);
+                kfree(buffer);
                 return;
             }
+            kfree(file_name);
         }
     }
 
@@ -116,4 +119,8 @@ void exec(char *command) {
     }
 
     uart_puts("Command introuvable\r\n");
+}
+
+void print_shell() {
+    uart_puts("Perry -> ");
 }

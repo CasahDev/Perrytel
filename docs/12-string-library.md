@@ -10,7 +10,7 @@
 ### 1. Contexte et Objectif
 Dans un environnement "bare-metal" sans système d'exploitation sous-jacent, la bibliothèque standard du C (`libc`) n'est pas disponible. Pour pouvoir développer un Shell interactif capable d'analyser des commandes textuelles et d'afficher des données, il a fallu recréer notre propre équivalent de `<string.h>` à partir de zéro.
 
-### 2. Fonctions implémentées (`kernel/string.c`)
+### 2. Fonctions implémentées (`../user/string.c`)
 
 #### `strlen` (Calcul de la longueur)
 - **Rôle :** Compte le nombre de caractères avant d'atteindre le marqueur de fin de chaîne (`\0`).

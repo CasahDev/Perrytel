@@ -146,6 +146,7 @@ void sd_init() {
 
     sd_read_block(starting_sector, buffer);
     fat32_init(starting_sector, buffer);
+    kfree(buffer);
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {

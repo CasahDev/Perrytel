@@ -7,3 +7,5 @@ typedef struct {
 } Command;
 
 void exec(char* command);
+
+void print_shell();

@@ -1,4 +1,4 @@
-#include <kernel/string.h>
+#include <string.h>
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>

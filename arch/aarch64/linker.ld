@@ -45,5 +45,6 @@ SECTIONS
     .user_text :
     {
         *(.user_text)
+        build/user_*.o(.text .text.* .rodata .rodata.*)
     }
 }

@@ -1,7 +1,7 @@
 #include <kernel/memory.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <kernel/string.h>
+#include <string.h>
 #include <drivers/uart.h>
 
 struct block_meta *heap_start = NULL; 
