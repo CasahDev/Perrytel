@@ -177,7 +177,3 @@ void execute_command() {
 
     print_shell();
 }
-
-void printf(char *str) {
-    syscall3(64, 1, (uint64_t) str, strlen(str));
-}
