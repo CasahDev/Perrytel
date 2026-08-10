@@ -10,3 +10,4 @@ syscall_callback_type get_syscall_handler(uint32_t syscall_id);
 uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 
 uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
+uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);

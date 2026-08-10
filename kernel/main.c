@@ -34,6 +34,8 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 
     init_syscall_handler();
     register_syscall_handler(64, uart_write);
+    register_syscall_handler(93, sys_exit_handler);
+
     sd_init();
     user_mode();
 }
