@@ -5,6 +5,8 @@
 
 #include <kernel/memory.h>
 
+#define EOF 0x0FFFFFF8
+
 static uint32_t starting_partition_sector;
 static uint32_t starting_fat_sector;
 static uint32_t starting_data_sector;
@@ -22,13 +24,25 @@ void fat32_init(const uint32_t starting_sector, const uint8_t *cluster) {
 }
 
 char *fat32_read_file(const fat32_dir_entry *entry) {
-    void *buffer = kalloc(entry->size + 1);
+    char *buffer = kalloc(entry->size + 1);
 
-    const uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
-    const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
+    uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
+    uint32_t bytes_read = 0;
+    void *fat_buffer = kalloc(512);
 
-    sd_read_block(lba_sector, buffer);
+    while (cluster_num < EOF && bytes_read < entry->size) {
+        const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
 
+        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
+        bytes_read += 512;
+
+        const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
+        sd_read_block(fat_sector, fat_buffer);
+        cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
+    }
+
+    kfree(fat_buffer);
+    buffer[entry->size] = '\0';
     return buffer;
 }
 
