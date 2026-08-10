@@ -9,7 +9,7 @@
 
 #include <kernel/memory.h>
 #include <kernel/shell.h>
-#include <kernel/string.h>
+#include <string.h>
 #include <kernel/syscall.h>
 
 syscall_callback_type syscall_handlers[1024];

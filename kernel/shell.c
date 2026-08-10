@@ -5,7 +5,7 @@
 
 #include <kernel/memory.h>
 #include <kernel/shell.h>
-#include <kernel/string.h>
+#include <string.h>
 
 const int command_number = 7;
 
