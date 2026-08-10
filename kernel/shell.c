@@ -117,3 +117,7 @@ void exec(char *command) {
 
     uart_puts("Command introuvable\r\n");
 }
+
+void print_shell() {
+    uart_puts("Perry -> ");
+}
