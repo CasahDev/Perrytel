@@ -78,5 +78,6 @@ uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg
 
     print_shell();
 
+    kfree(code);
     return 0;
 }

@@ -75,8 +75,11 @@ void cat(int argc, char **argv) {
                 char *content = fat32_read_file(entry);
                 uart_puts(content);
                 kfree(content);
+                kfree(file_name);
+                kfree(buffer);
                 return;
             }
+            kfree(file_name);
         }
     }
 
