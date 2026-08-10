@@ -71,6 +71,14 @@ uint32_t get_current_directory() {
     return current_directory_cluster;
 }
 
+void set_current_directory(const uint32_t new_directory) {
+    current_directory_cluster = new_directory;
+}
+
+uint32_t get_current_directory_sector() {
+    return starting_data_sector + (get_current_directory() - 2) * sectors_per_cluster;
+}
+
 uint32_t fat32_allocate_cluster() {
     void *buffer_fat = kalloc(512);
     sd_read_block(starting_fat_sector, buffer_fat);
