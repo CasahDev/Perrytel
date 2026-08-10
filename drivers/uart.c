@@ -175,7 +175,7 @@ void execute_command() {
     command_ready = false;
     memset(shell_buffer, 0, 256);
 
-    uart_puts("Perry -> ");
+    print_shell();
 }
 
 void printf(char *str) {
