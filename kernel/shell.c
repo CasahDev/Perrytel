@@ -179,7 +179,7 @@ static Command list[] = {
 
 void exec(char *command) {
     char *argv[10];
-    int argc = strsplit(command, argv, 10, ' ');
+    int argc = strsplit(command, argv, 10);
     
     if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
     for (int i = 0; i < command_number; i++) {
