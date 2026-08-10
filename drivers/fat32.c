@@ -5,8 +5,6 @@
 
 #include <kernel/memory.h>
 
-#define EOF 0x0FFFFFF8
-
 static uint32_t starting_partition_sector;
 static uint32_t starting_fat_sector;
 static uint32_t starting_data_sector;
@@ -86,7 +84,7 @@ uint32_t fat32_allocate_cluster() {
 
     uint32_t cluster = 3;
     uint32_t sector = 0;
-    while (fat[cluster] != 0x00000000) {
+    while (fat[cluster] != EMPTY_CLUSTER) {
         cluster++;
         if (cluster == 128) {
             sector++;
@@ -96,7 +94,7 @@ uint32_t fat32_allocate_cluster() {
         }
     }
 
-    fat[cluster] = 0x0FFFFFFF;
+    fat[cluster] = CLUSTER_END;
     sd_write_block(starting_fat_sector + sector, buffer_fat);
     kfree(buffer_fat);
 
@@ -140,11 +138,11 @@ void fat32_create_file(char *file_name, char *content) {
     sd_write_block(lba_sector, (uint8_t *) file_content);
 
     void *root_buffer = kalloc(512);
-    sd_read_block(root_sector, root_buffer);
+    sd_read_block(get_current_directory_sector(), root_buffer);
 
     int slot = 0;
     fat32_dir_entry *entries = (fat32_dir_entry *) root_buffer;
-    while (slot < 16 && (uint8_t) entries[slot].name[0] != 0x00 && (uint8_t) entries[slot].name[0] != 0xE5) {
+    while (slot < 16 && (uint8_t) entries[slot].name[0] != 0x00 && (uint8_t) entries[slot].name[0] != DELETED) {
         slot++;
     }
 
@@ -168,7 +166,7 @@ void fat32_create_file(char *file_name, char *content) {
     }
 
     // Archive classique (fichier)
-    entry->attributes = 0x20;
+    entry->attributes = ARCHIVE;
 
     entry->cluster_entry_high = global_cluster >> 16;
     entry->cluster_entry_low = global_cluster & 0xFFFF;
@@ -181,7 +179,7 @@ void fat32_create_file(char *file_name, char *content) {
     kfree(file_content);
 }
 
-void fat32_create_directory(char *directory) {
+void fat32_create_directory(const char *directory) {
     const uint32_t global_cluster = fat32_allocate_cluster();
     const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
 
@@ -196,10 +194,10 @@ void fat32_create_directory(char *directory) {
     new_dir->name[0] = '.';
 
     for (int i = 0; i < 10; i++) {
-        new_dir->name[i+1] = ' ';
+        new_dir->name[i + 1] = ' ';
     }
 
-    new_dir->attributes = 0x10;
+    new_dir->attributes = DIRECTORY;
     new_dir->cluster_entry_high = global_cluster >> 16;
     new_dir->cluster_entry_low = global_cluster & 0xFFFF;
 
@@ -208,10 +206,10 @@ void fat32_create_directory(char *directory) {
     parent_dir->name[1] = '.';
 
     for (int i = 0; i < 9; i++) {
-        parent_dir->name[i+2] = ' ';
+        parent_dir->name[i + 2] = ' ';
     }
 
-    parent_dir->attributes = 0x10;
+    parent_dir->attributes = DIRECTORY;
 
     if (current_directory_cluster == 2) {
         parent_dir->cluster_entry_high = 0;
@@ -231,14 +229,15 @@ void fat32_create_directory(char *directory) {
 
     fat32_dir_entry *parent_entries = parent_directory;
     int slot = 0;
-    while (slot < 16 && (uint8_t) parent_entries[slot].name[0] != 0x00 && (uint8_t) parent_entries[slot].name[0] != 0xE5) {
+    while (slot < 16 && (uint8_t) parent_entries[slot].name[0] != 0x00 && (uint8_t) parent_entries[slot].name[0] !=
+           DELETED) {
         slot++;
     }
 
     fat32_dir_entry *entry = &parent_entries[slot];
     memset(entry->name, ' ', 11);
 
-    entry->attributes = 0x10;
+    entry->attributes = DIRECTORY;
     entry->cluster_entry_high = global_cluster >> 16;
     entry->cluster_entry_low = global_cluster & 0xFFFF;
     entry->size = 0;
@@ -251,4 +250,28 @@ void fat32_create_directory(char *directory) {
 
     sd_write_block(parent_sector, parent_directory);
     kfree(parent_directory);
+}
+
+void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory) {
+    uint32_t sector = get_current_directory_sector();
+    entry->name[0] = DELETED;
+    sd_write_block(sector, parent_directory);
+
+    uint32_t cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+
+    void *buffer = kalloc(512);
+    while (cluster < EOF) {
+        const uint32_t lba_sector = starting_fat_sector + cluster / 128;
+        sd_read_block(lba_sector, buffer);
+
+        uint32_t *fat = buffer;
+        const uint32_t next_cluster = fat[cluster % 128];
+
+        fat[cluster % 128] = EMPTY_CLUSTER;
+
+        sd_write_block(lba_sector, buffer);
+        cluster = next_cluster;
+    }
+
+    kfree(buffer);
 }

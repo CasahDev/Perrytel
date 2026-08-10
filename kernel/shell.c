@@ -7,7 +7,6 @@
 #include <kernel/shell.h>
 #include <string.h>
 
-const int command_number = 9;
 int parent_directory = 2;
 static char current_path[128] = "/";
 
@@ -46,11 +45,11 @@ void ls(int argc, char **argv) {
     for (int i = 0; i < 16; i++) {
         const fat32_dir_entry *entry = &buffer[i * 32];
 
-        if (entry->attributes == 0x0F) {
+        if (entry->attributes == LONG_FILE_NAME) {
             uart_puts("debug 2");
         }
 
-        if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
+        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
             void *file_name = kalloc(11);
             fat32_get_name(entry, file_name);
             uart_puts(file_name);
@@ -73,7 +72,7 @@ void cat(int argc, char **argv) {
 
     for (int i = 0; i < 16; i++) {
         const fat32_dir_entry *entry = &buffer[i * 32];
-        if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
+        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
             void *file_name = kalloc(11);
             fat32_get_name(entry, file_name);
             if (strcmp(file_name, file) != 0) {
@@ -119,12 +118,12 @@ void cd(int argc, char **argv) {
 
         const fat32_dir_entry *entry = &buffer[i * 32];
 
-        if ((uint8_t)entry->name[0] != 0x00 && (uint8_t)entry->name[0] != 0xE5) {
+        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
             void *dir = kalloc(11);
             fat32_get_name(entry, dir);
 
-            if (strcmp(dir, argv[1]) == 1) {
-                if (entry->attributes == 0x10) {
+            if (strcmp(dir, directory) == 1) {
+                if (entry->attributes == DIRECTORY) {
                     uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
                     if (target_cluster == 0) {
                         target_cluster = 2;
@@ -166,6 +165,40 @@ void cd(int argc, char **argv) {
     uart_puts("\r\n");
 }
 
+void rm(int argc, char **argv) {
+if (argc != 2) return;
+
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+
+    const char *file_name = argv[1];
+
+    for (int i = 0; i < 16; i++) {
+
+        fat32_dir_entry *entry = &buffer[i * 32];
+
+        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
+            void *file = kalloc(11);
+            fat32_get_name(entry, file);
+
+            if (strcmp(file, file_name) == 1) {
+                if (entry->attributes == DIRECTORY) {
+                    uart_puts("Impossible de supprimer un dossier");
+                } else {
+                    fat32_remove_file(entry, buffer);
+                }
+
+                return;
+            }
+            kfree(file);
+        }
+    }
+
+    kfree(buffer);
+    uart_puts("\r\n");
+}
+
+
 static Command list[] = {
     {.name = "help", .run = help},
     {.name = "time", .run = time_command},
@@ -174,13 +207,14 @@ static Command list[] = {
     {.name = "ls", .run = ls},
     {.name = "cat", .run = cat},
     {.name = "cd", .run = cd},
-    {.name = "mkdir", .run = mkdir}
+    {.name = "mkdir", .run = mkdir},
+    {.name = "rm", .run = rm}
 };
-
 void exec(char *command) {
     char *argv[10];
     int argc = strsplit(command, argv, 10);
-    
+
+    int command_number = sizeof(list) / sizeof(Command);
     if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
     for (int i = 0; i < command_number; i++) {
         if (strcmp(argv[0], list[i].name) != 0) {

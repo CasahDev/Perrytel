@@ -1,6 +1,15 @@
 #pragma once
 #include <stdint.h>
 
+#define DELETED 0xE5
+#define DIRECTORY 0x10
+#define CLUSTER_END 0x0FFFFFFF
+#define ARCHIVE 0x20
+#define EOF 0x0FFFFFF8
+#define EMPTY_CLUSTER 0x00000000
+#define LONG_FILE_NAME 0x0F
+#define EMPTY 0x00
+
 typedef struct __attribute__((packed)) fat32_boot_sector {
     // BPB
     uint8_t reserved[3];
@@ -148,3 +157,5 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
 void fat32_create_file(char *file_name, char *content);
 
 void fat32_create_directory(const char *directory);
+
+void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory);
