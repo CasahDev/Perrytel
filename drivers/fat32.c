@@ -62,6 +62,29 @@ uint32_t get_current_directory_sector() {
 
 // region Drivers
 
+
+static void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
+    uint8_t char_count = 0;
+    for (int i = 0; i < 8; i++) {
+        if (entry->name[i] != ' ') {
+            out_name[char_count] = entry->name[i];
+            char_count++;
+        }
+    }
+
+    if (entry->name[8] != ' ' || entry->name[9] != ' ' || entry->name[10] != ' ') {
+        out_name[char_count] = '.';
+        char_count++;
+        for (int i = 0; i < 3; i++) {
+            if (entry->name[8 + i] != ' ') {
+                out_name[char_count] = entry->name[8 + i];
+                char_count++;
+            }
+        }
+    }
+    out_name[char_count] = '\0';
+}
+
 // TODO Gérer les fichiers dans des sous dossiers
 static int fat32_read_file(const char *path, char *content, uint32_t max_size) {
     void *buffer = kalloc(512);
@@ -79,7 +102,6 @@ static int fat32_read_file(const char *path, char *content, uint32_t max_size) {
                 void *fat_buffer = kalloc(512);
 
                 while (cluster_num < EOF && bytes_read < entry->size) {
-
                     if (bytes_read + 512 > max_size) {
                         kfree(fat_buffer);
                         kfree(file_name);
@@ -135,29 +157,7 @@ uint32_t fat32_allocate_cluster() {
     return cluster + sector * 128;
 }
 
-void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
-    uint8_t char_count = 0;
-    for (int i = 0; i < 8; i++) {
-        if (entry->name[i] != ' ') {
-            out_name[char_count] = entry->name[i];
-            char_count++;
-        }
-    }
-
-    if (entry->name[8] != ' ' || entry->name[9] != ' ' || entry->name[10] != ' ') {
-        out_name[char_count] = '.';
-        char_count++;
-        for (int i = 0; i < 3; i++) {
-            if (entry->name[8 + i] != ' ') {
-                out_name[char_count] = entry->name[8 + i];
-                char_count++;
-            }
-        }
-    }
-    out_name[char_count] = '\0';
-}
-
-int fat32_create_file(const char *file_name, const char *content) {
+static int fat32_create_file(const char *file_name, const char *content) {
     const uint32_t global_cluster = fat32_allocate_cluster();
     const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
 
@@ -206,7 +206,7 @@ int fat32_create_file(const char *file_name, const char *content) {
     entry->cluster_entry_low = global_cluster & 0xFFFF;
     entry->size = strlen(content);
 
-    sd_write_block(root_sector, root_buffer);
+    sd_write_block(get_current_directory_sector(), root_buffer);
 
     kfree(root_buffer);
 
@@ -215,7 +215,73 @@ int fat32_create_file(const char *file_name, const char *content) {
     return 0;
 }
 
-int fat32_create_directory(const char *directory) {
+// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
+static int fat32_change_dir(const char *directory_name) {
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+    uint8_t status = 0;
+
+    const char *directory = directory_name;
+
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+
+        if ((uint8_t) entry->name[0] == EMPTY) break;
+
+        if ((uint8_t) entry->name[0] == DELETED) continue;
+
+        void *dir = kalloc(11);
+        fat32_get_name(entry, dir);
+
+        if (strcmp(dir, directory) != 1) continue;
+
+        if (entry->attributes != DIRECTORY) status = 1;
+
+        uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+        if (target_cluster == 0) {
+            target_cluster = 2;
+            memset(current_path, ' ', 128);
+            current_path[0] = '/';
+            current_path[1] = '\0';
+        }
+
+        if (strcmp(directory, "..") == 1) {
+            uint8_t c = strlen(current_path) - 1;
+            while (current_path[c] != '/' && c > 0) {
+                c--;
+            }
+
+            if (c == 0) {
+                current_path[0] = '/';
+                current_path[1] = '\0';
+            } else {
+                current_path[c] = '\0';
+            }
+        } else {
+            if (current_path[strlen(current_path) - 1] != '/') {
+                current_path[strlen(current_path)] = '/';
+                current_path[strlen(current_path)] = '\0';
+            }
+
+            uint32_t current_pos = strlen(current_path);
+            for (uint16_t l = 0; l < strlen(directory); l++) {
+                current_path[current_pos] = directory[l];
+                current_pos++;
+            }
+            current_path[current_pos] = '\0';
+        }
+
+        set_current_directory(target_cluster);
+
+        kfree(dir);
+    }
+
+    kfree(buffer);
+
+    return status;
+}
+
+static int fat32_create_directory(const char *directory) {
     const uint32_t global_cluster = fat32_allocate_cluster();
     const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
 
@@ -290,127 +356,133 @@ int fat32_create_directory(const char *directory) {
     return 0;
 }
 
-int fat32_remove_file(fat32_dir_entry *entry, void *parent_directory, uint32_t sector) {
-    if (sector == 0) sector = get_current_directory_sector();
+static int fat32_delete_entry_raw(fat32_dir_entry *entry, void *directory_buffer) {
+    uint32_t sector = get_current_directory_sector();
 
     entry->name[0] = DELETED;
-    sd_write_block(sector, parent_directory);
+
+    sd_write_block(sector, directory_buffer);
 
     uint32_t cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
 
-    void *buffer = kalloc(512);
+    void *file_buffer = kalloc(512);
     while (cluster < EOF) {
         const uint32_t lba_sector = starting_fat_sector + cluster / 128;
-        sd_read_block(lba_sector, buffer);
+        sd_read_block(lba_sector, file_buffer);
 
-        uint32_t *fat = buffer;
+        uint32_t *fat = file_buffer;
         const uint32_t next_cluster = fat[cluster % 128];
 
         fat[cluster % 128] = EMPTY_CLUSTER;
 
-        sd_write_block(lba_sector, buffer);
+        sd_write_block(lba_sector, file_buffer);
         cluster = next_cluster;
     }
 
-    kfree(buffer);
+    kfree(file_buffer);
 
     return 0;
 }
 
-
-int fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector) {
-    if (parent_sector == 0) parent_sector = get_current_directory_sector();
-    uint32_t cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
-
-    void *buffer = kalloc(512);
-    const uint32_t lba_sector = starting_data_sector + (cluster - 2) * sectors_per_cluster;
-    sd_read_block(lba_sector, buffer);
-    fat32_dir_entry *entries = buffer;
-
-    for (int i = 0; i < 16; i++) {
-        if (entries[i].name[0] == EMPTY) break;
-
-        if (entries[i].name[0] == DELETED) continue;
-
-        if (entries[i].name[0] == '.' && (entries[i].name[1] == ' ' || entries[i].name[1] == '.')) continue;
-
-        if (entries[i].attributes == DIRECTORY) {
-            fat32_remove_directory(&entries[i], buffer, lba_sector);
-        } else {
-            fat32_remove_file(&entries[i], buffer, lba_sector);
-        }
-    }
-
-    fat32_remove_file(entry, parent_directory, parent_sector);
-    kfree(buffer);
-
-    return 0;
-}
-
-// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
-static int fat32_change_dir(const char *directory_name) {
+static int fat32_remove_file(const char *path) {
     void *buffer = kalloc(512);
     sd_read_block(get_current_directory_sector(), buffer);
-    uint8_t status = 0;
-
-    const char *directory = directory_name;
 
     for (int i = 0; i < 16; i++) {
-        const fat32_dir_entry *entry = &buffer[i * 32];
-
-        if ((uint8_t) entry->name[0] == EMPTY) break;
+        fat32_dir_entry *entry = &buffer[i * 32];
+        if ((uint8_t) entry->name[0] == EMPTY) {
+            kfree(buffer);
+            return 2;
+        }
 
         if ((uint8_t) entry->name[0] == DELETED) continue;
 
-        void *dir = kalloc(11);
-        fat32_get_name(entry, dir);
-
-        if (strcmp(dir, directory) != 1) continue;
-
-        if (entry->attributes != DIRECTORY) status = 1;
-
-        uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
-        if (target_cluster == 0) {
-            target_cluster = 2;
-            memset(current_path, ' ', 128);
-            current_path[0] = '/';
-            current_path[1] = '\0';
+        void *file = kalloc(11);
+        fat32_get_name(entry, file);
+        if (strcmp(file, path) == 0) {
+            kfree(file);
+            continue;
         }
 
-        if (strcmp(directory, "..") == 1) {
-            uint8_t c = strlen(current_path) - 1;
-            while (current_path[c] != '/' && c > 0) {
-                c--;
-            }
-
-            if (c == 0) {
-                current_path[0] = '/';
-                current_path[1] = '\0';
-            } else {
-                current_path[c] = '\0';
-            }
-        } else {
-            if (current_path[strlen(current_path) - 1] != '/') {
-                current_path[strlen(current_path)] = '/';
-                current_path[strlen(current_path)] = '\0';
-            }
-
-            uint32_t current_pos = strlen(current_path);
-            for (uint16_t l = 0; l < strlen(directory); l++) {
-                current_path[current_pos] = directory[l];
-                current_pos++;
-            }
-            current_path[current_pos] = '\0';
+        if (entry->attributes == DIRECTORY) {
+            return 1;
         }
 
-        set_current_directory(target_cluster);
+        fat32_delete_entry_raw(entry, buffer);
 
-        kfree(dir);
+        return 0;
     }
 
     kfree(buffer);
+    return 1;
+}
 
-    return status;
+
+static int fat32_remove_directory(const char *path) {
+    void *directory_buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), directory_buffer);
+
+
+    for (int i = 0; i < 16; i++) {
+        fat32_dir_entry *entry = &directory_buffer[i * 32];
+
+        if ((uint8_t) entry->name[0] == EMPTY) {
+            kfree(directory_buffer);
+            return 0;
+        }
+
+        if ((uint8_t) entry->name[0] == DELETED) continue;
+
+
+        void *file_name = kalloc(11);
+        fat32_get_name(entry, file_name);
+
+        if (strcmp(file_name, path) == 0) {
+            kfree(file_name);
+            continue;
+        }
+
+        if (entry->attributes != DIRECTORY) {
+            kfree(file_name);
+            return 1;
+        }
+
+        const uint32_t cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+
+        void *file_buffer = kalloc(512);
+        const uint32_t lba_sector = starting_data_sector + (cluster - 2) * sectors_per_cluster;
+        sd_read_block(lba_sector, file_buffer);
+        const fat32_dir_entry *entries = file_buffer;
+
+        fat32_change_dir(path);
+        for (int j = 0; j < 16; j++) {
+            if (entries[j].name[0] == EMPTY) break;
+
+            if (entries[j].name[0] == DELETED) continue;
+
+            if (entries[j].name[0] == '.' && (entries[j].name[1] == ' ' || entries[j].name[1] == '.')) continue;
+
+
+            if (entries[j].attributes == DIRECTORY) {
+                fat32_remove_directory(entries[j].name);
+            } else {
+                char out[11];
+                fat32_get_name(&entries[j], out);
+                fat32_remove_file(out);
+            }
+        }
+        fat32_change_dir("..");
+
+        fat32_delete_entry_raw(entry, directory_buffer);
+        kfree(file_buffer);
+        kfree(file_name);
+
+        return 0;
+    }
+
+
+    kfree(directory_buffer);
+    return 1;
 }
 
 
@@ -420,11 +492,13 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
     char **temp_array = kalloc(128 * sizeof(char *));
     sd_read_block(get_current_directory_sector(), buffer);
 
-    uint32_t file_number = 0;
+    int file_number = 0;
 
     for (int i = 0; i < 16; i++) {
         const fat32_dir_entry *entry = &buffer[i * 32];
         if ((uint8_t) entry->name[0] == EMPTY) break;
+
+        if ((uint8_t) entry->name[0] == DELETED) continue;
 
         if (entry->attributes == LONG_FILE_NAME) {
             // Long names
@@ -432,7 +506,7 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
 
         void *file_name = kalloc(strlen(entry->name) + 1);
         fat32_get_name(entry, file_name);
-        temp_array[i] = file_name;
+        temp_array[file_number] = file_name;
         file_number++;
     }
 
@@ -466,5 +540,7 @@ const struct vfs_driver fat32_driver = {
     .path = path,
     .read_file = fat32_read_file,
     .create_dir = fat32_create_directory,
-    .create_file = fat32_create_file
+    .create_file = fat32_create_file,
+    .remove_file = fat32_remove_file,
+    .remove_dir = fat32_remove_directory
 };

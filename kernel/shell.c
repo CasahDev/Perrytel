@@ -110,65 +110,13 @@ void cd(int argc, char **argv) {
 void rm(int argc, char **argv) {
     if (argc != 2) return;
 
-    void *buffer = kalloc(512);
-    sd_read_block(get_current_directory_sector(), buffer);
-
-    const char *file_name = argv[1];
-
-    for (int i = 0; i < 16; i++) {
-        fat32_dir_entry *entry = &buffer[i * 32];
-
-        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
-            void *file = kalloc(11);
-            fat32_get_name(entry, file);
-
-            if (strcmp(file, file_name) == 1) {
-                if (entry->attributes == DIRECTORY) {
-                    uart_puts("Impossible de supprimer un dossier");
-                } else {
-                    fat32_remove_file(entry, buffer, 0);
-                }
-
-                return;
-            }
-            kfree(file);
-        }
-    }
-
-    kfree(buffer);
-    uart_puts("\r\n");
+    uint32_t status = driver.remove_file(argv[1]);
 }
 
 void rmdir(int argc, char **argv) {
     if (argc != 2) return;
 
-    void *buffer = kalloc(512);
-    sd_read_block(get_current_directory_sector(), buffer);
-
-    const char *file_name = argv[1];
-
-    for (int i = 0; i < 16; i++) {
-        fat32_dir_entry *entry = &buffer[i * 32];
-
-        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
-            void *file = kalloc(11);
-            fat32_get_name(entry, file);
-
-            if (strcmp(file, file_name) == 1) {
-                if (entry->attributes == DIRECTORY) {
-                    fat32_remove_directory(entry, buffer, get_current_directory_sector());
-                } else {
-                    uart_puts("Ce n'est pas un dossier !");
-                }
-
-                return;
-            }
-            kfree(file);
-        }
-    }
-
-    kfree(buffer);
-    uart_puts("\r\n");
+    uint32_t status = driver.remove_dir(argv[1]);
 }
 
 void init_shell(struct vfs_driver storage_driver) {

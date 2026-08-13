@@ -136,25 +136,3 @@ typedef struct __attribute__((packed)) fat32_dir_entry {
 extern const struct vfs_driver fat32_driver;
 
 void fat32_init(uint32_t starting_sector, const uint8_t *cluster);
-
-uint32_t get_starting_partition_sector();
-
-uint32_t get_starting_fat_sector();
-
-uint32_t get_starting_data_sector();
-
-uint32_t get_sectors_per_cluster();
-
-uint32_t get_root_sector();
-
-uint32_t get_current_directory();
-
-void set_current_directory(uint32_t new_directory);
-
-uint32_t get_current_directory_sector();
-
-void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
-
-int fat32_remove_file(fat32_dir_entry *entry, void* parent_directory, uint32_t sector);
-
-int fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector);
