@@ -1,13 +1,15 @@
+#include <stdbool.h>
+
 #include <drivers/uart.h>
 
-volatile char state;
+volatile bool is_function_state;
 
 void keyboard_update() {
     int c = uart_get_char_async();
     if (c != -1) {
-        if (!state) {
+        if (!is_function_state) {
             if (c == 0x13) {
-                state = 1;
+                is_function_state = true;
             } else if (c == '\r') {
                     uart_putc('\r');
                     uart_putc('\n');
@@ -22,7 +24,7 @@ void keyboard_update() {
             } else if (c == 0x42) {
                 
             }
-            state = 0;
+            is_function_state = false;
         }
     }
 }

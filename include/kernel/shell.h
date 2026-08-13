@@ -1,4 +1,7 @@
 #pragma once
+
+#include <kernel/vfs.h>
+
 typedef void (*function)(int argc, char **argv);
 
 typedef struct {
@@ -7,5 +10,7 @@ typedef struct {
 } Command;
 
 void exec(char* command);
+
+void init_shell(struct vfs_driver driver);
 
 void print_shell();

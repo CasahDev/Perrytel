@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <kernel/vfs.h>
 
 #define DELETED 0xE5
 #define DIRECTORY 0x10
@@ -132,32 +133,6 @@ typedef struct __attribute__((packed)) fat32_dir_entry {
     uint32_t size;
 } fat32_dir_entry;
 
+extern const struct vfs_driver fat32_driver;
+
 void fat32_init(uint32_t starting_sector, const uint8_t *cluster);
-
-char *fat32_read_file(const fat32_dir_entry *entry);
-
-uint32_t get_starting_partition_sector();
-
-uint32_t get_starting_fat_sector();
-
-uint32_t get_starting_data_sector();
-
-uint32_t get_sectors_per_cluster();
-
-uint32_t get_root_sector();
-
-uint32_t get_current_directory();
-
-void set_current_directory(uint32_t new_directory);
-
-uint32_t get_current_directory_sector();
-
-void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
-
-void fat32_create_file(char *file_name, char *content);
-
-void fat32_create_directory(const char *directory);
-
-void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory, uint32_t sector);
-
-void fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector);

@@ -7,6 +7,7 @@
 #include <kernel/exception.h>
 #include <kernel/gic.h>
 #include <kernel/mmu.h>
+#include <kernel/shell.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
 
@@ -37,5 +38,8 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_syscall_handler(93, sys_exit_handler);
 
     sd_init();
+
+    init_shell(*active_fs);
+
     user_mode();
 }

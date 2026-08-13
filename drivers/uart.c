@@ -22,14 +22,13 @@ volatile int shell_index;
 volatile bool command_ready = false;
 
 // Loop <delay> times in a way that the compiler won't optimize away
-static inline void delay(int32_t count)
-{
-	__asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
-		 : "=r"(count): [count]"0"(count) : "cc");
+static inline void delay(int32_t count) {
+    __asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+        : "=r"(count): [count]"0"(count) : "cc");
 }
 
 volatile unsigned int __attribute__((aligned(16))) mbox[9] = {
-    9*4, 0, 0x38002, 12, 8, 2, 3000000, 0 ,0
+    9 * 4, 0, 0x38002, 12, 8, 2, 3000000, 0, 0
 };
 
 void uart_set_baudrate(uint32_t baud) {
@@ -43,13 +42,15 @@ void uart_set_baudrate(uint32_t baud) {
     mmio_write(MMIO_BASE, UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
 
-void uart_init(int raspi)
-{
+void uart_init(int raspi) {
     switch (raspi) {
         case 2:
-        case 3:  MMIO_BASE = 0x3F000000; break;
-        case 4:  MMIO_BASE = 0xFE000000; break;
-        default: MMIO_BASE = 0x20000000; break;
+        case 3: MMIO_BASE = 0x3F000000;
+            break;
+        case 4: MMIO_BASE = 0xFE000000;
+            break;
+        default: MMIO_BASE = 0x20000000;
+            break;
     }
 
     mmio_write(MMIO_BASE, UART0_CR, 0x00000000);
@@ -66,22 +67,23 @@ void uart_init(int raspi)
     mmio_write(MMIO_BASE, GPPUDCLK0, 0x00000000);
     mmio_write(MMIO_BASE, UART0_ICR, 0x7FF);
 
-    #ifndef QEMU
+#ifndef QEMU
     if (raspi >= 3) {
-        unsigned int r = (((uintptr_t)(&mbox) & ~0xF) | 8);
-        while ( mmio_read(MMIO_BASE, MBOX_STATUS) & 0x80000000 ) { }
+        unsigned int r = (((uintptr_t) (&mbox) & ~0xF) | 8);
+        while (mmio_read(MMIO_BASE, MBOX_STATUS) & 0x80000000) {
+        }
         mmio_write(MMIO_BASE, MBOX_WRITE, r);
-        while ( (mmio_read(MMIO_BASE, MBOX_STATUS) & 0x40000000) || mmio_read(MMIO_BASE, MBOX_READ) != r ) { }
+        while ((mmio_read(MMIO_BASE, MBOX_STATUS) & 0x40000000) || mmio_read(MMIO_BASE, MBOX_READ) != r) {
+        }
     }
-	#endif
+#endif
 
     uart_set_baudrate(1200);
     mmio_write(MMIO_BASE, UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 6) |
-                           (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10));
+                                      (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10));
 }
 
-void uart_putc(unsigned char c)
-{
+void uart_putc(unsigned char c) {
     mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) & ~(1 << 5));
     int was_empty = (tx_head == tx_tail);
 
@@ -92,19 +94,12 @@ void uart_putc(unsigned char c)
         mmio_write(MMIO_BASE, UART0_DR, tx_buffer[tx_tail]); // ou mmio_write(UART0_DR, c);
         tx_tail = (1 + tx_tail) % 1024;
     }
-   mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) | (1 << 5));
+    mmio_write(MMIO_BASE, UART0_IMSC, mmio_read(MMIO_BASE, UART0_IMSC) | (1 << 5));
 }
 
-unsigned char uart_getc()
-{
-    while ( mmio_read(MMIO_BASE, UART0_FR) & (1 << 4) ) { }
-    return mmio_read(MMIO_BASE, UART0_DR);
-}
-
-void uart_puts(const char* str)
-{
-	for (int i = 0; str[i] != '\0'; i ++)
-		uart_putc((unsigned char)str[i]);
+void uart_puts(const char *str) {
+    for (int i = 0; str[i] != '\0'; i++)
+        uart_putc((unsigned char) str[i]);
 }
 
 void uart_put_hex(uint64_t hex) {
@@ -134,16 +129,21 @@ int uart_get_char_async() {
 void uart_handle_interrupt() {
     uint32_t mis = mmio_read(MMIO_BASE, UART0_MIS);
     if ((mis & (1 << 4)) || (mis & (1 << 6))) {
-        while(!(mmio_read(MMIO_BASE, UART0_FR) & (1 << 4))) {
+        while (!(mmio_read(MMIO_BASE, UART0_FR) & (1 << 4))) {
             // 1. On récupère la touche (et ça acquitte l'interruption au niveau de l'UART)
             unsigned char c = mmio_read(MMIO_BASE, UART0_DR);
 
             if (c == '\r') {
-                uart_putc('\r');
-                uart_putc('\n');
+                uart_puts("\r\n");
                 shell_buffer[shell_index] = '\0';
                 command_ready = true;
                 execute_command();
+            } else if (c == '\b' || c == 0x7F) {
+                rx_buffer[shell_index] = '\0';
+                if (shell_index > 0) {
+                    shell_index--;
+                    uart_puts("\b \b");
+                }
             } else {
                 uart_putc(c);
                 shell_buffer[shell_index] = c;
@@ -154,7 +154,7 @@ void uart_handle_interrupt() {
             rx_head = (rx_head + 1) % 1024;
         }
     }
-    if (mis & (1 << 5) ) {
+    if (mis & (1 << 5)) {
         if (tx_head != tx_tail) {
             mmio_write(MMIO_BASE, UART0_DR, tx_buffer[tx_tail]);
             tx_tail = (tx_tail + 1) % 1024;

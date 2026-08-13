@@ -64,7 +64,12 @@
 
 #define BOOT_FLAG 0x1BE
 
+#define FAT32_LBA 0x0C
+#define FAT32_CHS 0x0B
+
 uint8_t is_sdhc;
+
+const struct vfs_driver *active_fs = NULL;
 
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
@@ -145,7 +150,16 @@ void sd_init() {
     const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + 12];
 
     sd_read_block(starting_sector, buffer);
-    fat32_init(starting_sector, buffer);
+
+    switch (file_system) {
+        case FAT32_CHS:
+        case FAT32_LBA:
+            fat32_init(starting_sector, buffer);
+            break;
+    }
+
+    active_fs = &fat32_driver;
+
     kfree(buffer);
 }
 
