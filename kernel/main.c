@@ -34,6 +34,7 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_interrupt(27, timer_handler);
 
     init_syscall_handler();
+    register_syscall_handler(63, uart_read);
     register_syscall_handler(64, uart_write);
     register_syscall_handler(93, sys_exit_handler);
 

@@ -33,6 +33,10 @@ uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 }
 #endif
 
+uint64_t readf(int fd, char *out, uint64_t buffer_size) {
+    return syscall3(SYS_READ, fd, (uint64_t) out, (uint64_t) buffer_size);
+}
+
 void printf(char *str) {
     syscall2(SYS_WRITE, 1, (uint64_t) str);
 }
