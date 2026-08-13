@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <kernel/vfs.h>
 
 #define DELETED 0xE5
 #define DIRECTORY 0x10
@@ -131,6 +132,8 @@ typedef struct __attribute__((packed)) fat32_dir_entry {
     // Taille en octets
     uint32_t size;
 } fat32_dir_entry;
+
+extern const struct vfs_driver fat32_driver;
 
 void fat32_init(uint32_t starting_sector, const uint8_t *cluster);
 

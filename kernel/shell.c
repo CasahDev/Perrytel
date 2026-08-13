@@ -3,12 +3,11 @@
 #include <drivers/timer.h>
 #include <drivers/uart.h>
 
+#include <string.h>
 #include <kernel/memory.h>
 #include <kernel/shell.h>
-#include <string.h>
 
-int parent_directory = 2;
-static char current_path[128] = "/";
+struct vfs_driver driver;
 
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
@@ -113,59 +112,8 @@ void mkdir(int argc, char **argv) {
 void cd(int argc, char **argv) {
     if (argc != 2) return;
 
-    void *buffer = kalloc(512);
-    sd_read_block(get_current_directory_sector(), buffer);
-
-    const char *directory = argv[1];
-
-    for (int i = 0; i < 16; i++) {
-        const fat32_dir_entry *entry = &buffer[i * 32];
-
-        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
-            void *dir = kalloc(11);
-            fat32_get_name(entry, dir);
-
-            if (strcmp(dir, directory) == 1) {
-                if (entry->attributes == DIRECTORY) {
-                    uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
-                    if (target_cluster == 0) {
-                        target_cluster = 2;
-                        memset(current_path, ' ', 128);
-                    }
-
-                    if (strcmp(directory, "..") == 1) {
-                        uint8_t c = strlen(current_path) - 1;
-                        while (current_path[c] != '/' && c > 0) {
-                            c--;
-                        }
-
-                        if (c == 0) {
-                            current_path[0] = '/';
-                            current_path[1] = '\0';
-                        } else {
-                            current_path[c] = '\0';
-                        }
-                    } else {
-                        if (current_path[strlen(current_path) - 1] != '/') {
-                            current_path[strlen(current_path)] = '/';
-                        }
-                        for (uint8_t l = 0; l < strlen(directory); l++) {
-                            current_path[strlen(current_path)] = directory[l];
-                        }
-                        current_path[strlen(current_path)] = '\0';
-                    }
-
-                    set_current_directory(target_cluster);
-                } else {
-                    uart_puts("Ce n'est pas un dossier");
-                }
-            }
-            kfree(dir);
-        }
-    }
-
-    kfree(buffer);
-    uart_puts("\r\n");
+    char *path = argv[1];
+    driver.change_dir(path);
 }
 
 void rm(int argc, char **argv) {
@@ -246,6 +194,10 @@ static Command list[] = {
     {.name = "rmdir", .run = rmdir}
 };
 
+void init_shell(struct vfs_driver storage_driver) {
+    driver = storage_driver;
+}
+
 void exec(char *command) {
     char *argv[10];
     int argc = strsplit(command, argv, 10);
@@ -264,7 +216,9 @@ void exec(char *command) {
 }
 
 void print_shell() {
+    char path[128];
+    driver.path(path);
     uart_puts("Perry (");
-    uart_puts(current_path);
+    uart_puts(path);
     uart_puts(") -> ");
 }
