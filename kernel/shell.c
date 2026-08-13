@@ -78,30 +78,10 @@ void ls(int argc, char **argv) {
 void cat(int argc, char **argv) {
     if (argc != 2) return;
 
-    void *buffer = kalloc(512);
+    char content[2048];
+    driver.read_file(argv[1], content, 2048);
+    uart_puts(content);
 
-    sd_read_block(get_current_directory_sector(), buffer);
-
-    const char *file = argv[1];
-
-    for (int i = 0; i < 16; i++) {
-        const fat32_dir_entry *entry = &buffer[i * 32];
-        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
-            void *file_name = kalloc(11);
-            fat32_get_name(entry, file_name);
-            if (strcmp(file_name, file) != 0) {
-                char *content = fat32_read_file(entry);
-                uart_puts(content);
-                kfree(content);
-                kfree(file_name);
-                kfree(buffer);
-                return;
-            }
-            kfree(file_name);
-        }
-    }
-
-    kfree(buffer);
     uart_puts("\r\n");
 }
 

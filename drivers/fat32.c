@@ -1,5 +1,4 @@
 #include <string.h>
-#include <drivers/uart.h>
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>
@@ -62,27 +61,54 @@ uint32_t get_current_directory_sector() {
 // endregion
 
 // region Drivers
-char *fat32_read_file(const fat32_dir_entry *entry) {
-    char *buffer = kalloc(entry->size + 1);
 
-    uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
-    uint32_t bytes_read = 0;
-    void *fat_buffer = kalloc(512);
+// TODO Gérer les fichiers dans des sous dossiers
+static int fat32_read_file(const char *path, char *content, uint32_t max_size) {
+    void *buffer = kalloc(512);
 
-    while (cluster_num < EOF && bytes_read < entry->size) {
-        const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
+    sd_read_block(get_current_directory_sector(), buffer);
 
-        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
-        bytes_read += 512;
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
+            void *file_name = kalloc(11);
+            fat32_get_name(entry, file_name);
+            if (strcmp(file_name, path) != 0) {
+                uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
+                uint32_t bytes_read = 0;
+                void *fat_buffer = kalloc(512);
 
-        const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
-        sd_read_block(fat_sector, fat_buffer);
-        cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
+                while (cluster_num < EOF && bytes_read < entry->size) {
+
+                    if (bytes_read + 512 > max_size) {
+                        kfree(fat_buffer);
+                        kfree(file_name);
+                        kfree(buffer);
+                        return 2;
+                    }
+
+                    const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
+
+                    sd_read_block(lba_sector, (uint8_t *) content + bytes_read);
+                    bytes_read += 512;
+
+                    const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
+                    sd_read_block(fat_sector, fat_buffer);
+                    cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
+                }
+
+                kfree(fat_buffer);
+                content[entry->size] = '\0';
+                kfree(file_name);
+                kfree(buffer);
+                return 0;
+            }
+            kfree(file_name);
+        }
     }
 
-    kfree(fat_buffer);
-    buffer[entry->size] = '\0';
-    return buffer;
+
+    return 1;
 }
 
 uint32_t fat32_allocate_cluster() {
@@ -363,7 +389,6 @@ static int fat32_change_dir(const char *directory_name) {
             } else {
                 current_path[c] = '\0';
             }
-            uart_puts("\r\n");
         } else {
             if (current_path[strlen(current_path) - 1] != '/') {
                 current_path[strlen(current_path)] = '/';
@@ -439,4 +464,5 @@ const struct vfs_driver fat32_driver = {
     .change_dir = fat32_change_dir,
     .list_dir = fat32_list_dir,
     .path = path,
+    .read_file = fat32_read_file,
 };
