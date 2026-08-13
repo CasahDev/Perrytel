@@ -42,26 +42,16 @@ void echo(int argc, char **argv) {
 }
 
 void ls(int argc, char **argv) {
-    void *buffer = kalloc(512);
-    sd_read_block(get_current_directory_sector(), buffer);
+    char **files = NULL;
+    const uint32_t count = driver.list_dir("", &files);
 
-    for (int i = 0; i < 16; i++) {
-        const fat32_dir_entry *entry = &buffer[i * 32];
-
-        if (entry->attributes == LONG_FILE_NAME) {
-            uart_puts("debug 2");
-        }
-
-        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
-            void *file_name = kalloc(11);
-            fat32_get_name(entry, file_name);
-            uart_puts(file_name);
-            kfree(file_name);
-            uart_puts("\r\n");
-        }
+    for (uint32_t i = 0; i < count; i++) {
+        uart_puts(files[i]);
+        uart_puts("\r\n");
+        kfree(files[i]);
     }
 
-    kfree(buffer);
+    kfree(files);
 }
 
 void cat(int argc, char **argv) {
