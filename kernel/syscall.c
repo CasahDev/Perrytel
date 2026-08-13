@@ -70,15 +70,7 @@ uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uin
 }
 
 uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    uart_puts("Programme terminé avec le code: ");
-    void *code = kalloc(5);
-    itoa(arg0, code);
-    uart_puts(code);
-    uart_puts("\n");
-
     print_shell();
-
-    kfree(code);
     return 0;
 }
 

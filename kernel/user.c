@@ -19,7 +19,5 @@ __attribute__((section(".user_text"))) void user_main_entry() {
     printf("Perrytel OS (AArch64) - Kernel Loaded\r\n");
 
     printf("Perry (/) -> ");
-    while(1) {
-        __asm volatile("wfe");
-    }
+    exit(0);
 }
