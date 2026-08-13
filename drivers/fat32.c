@@ -1,4 +1,5 @@
 #include <string.h>
+#include <drivers/uart.h>
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>
@@ -362,14 +363,19 @@ static int fat32_change_dir(const char *directory_name) {
             } else {
                 current_path[c] = '\0';
             }
+            uart_puts("\r\n");
         } else {
             if (current_path[strlen(current_path) - 1] != '/') {
                 current_path[strlen(current_path)] = '/';
+                current_path[strlen(current_path)] = '\0';
             }
-            for (uint8_t l = 0; l < strlen(directory); l++) {
-                current_path[strlen(current_path)] = directory[l];
+
+            uint32_t current_pos = strlen(current_path);
+            for (uint16_t l = 0; l < strlen(directory); l++) {
+                current_path[current_pos] = directory[l];
+                current_pos++;
             }
-            current_path[strlen(current_path)] = '\0';
+            current_path[current_pos] = '\0';
         }
 
         set_current_directory(target_cluster);
@@ -399,7 +405,7 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
             // Long names
         }
 
-        void *file_name = kalloc(strlen(entry->name) +1);
+        void *file_name = kalloc(strlen(entry->name) + 1);
         fat32_get_name(entry, file_name);
         temp_array[i] = file_name;
         file_number++;
