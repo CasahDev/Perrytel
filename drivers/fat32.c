@@ -22,28 +22,7 @@ void fat32_init(const uint32_t starting_sector, const uint8_t *cluster) {
     root_sector = starting_data_sector + (sector->root_directory_cluster - 2) * sectors_per_cluster;
 }
 
-char *fat32_read_file(const fat32_dir_entry *entry) {
-    char *buffer = kalloc(entry->size + 1);
-
-    uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
-    uint32_t bytes_read = 0;
-    void *fat_buffer = kalloc(512);
-
-    while (cluster_num < EOF && bytes_read < entry->size) {
-        const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
-
-        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
-        bytes_read += 512;
-
-        const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
-        sd_read_block(fat_sector, fat_buffer);
-        cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
-    }
-
-    kfree(fat_buffer);
-    buffer[entry->size] = '\0';
-    return buffer;
-}
+// region Getters/Setters
 
 uint32_t get_starting_partition_sector() {
     return starting_data_sector;
@@ -75,6 +54,32 @@ void set_current_directory(const uint32_t new_directory) {
 
 uint32_t get_current_directory_sector() {
     return starting_data_sector + (get_current_directory() - 2) * sectors_per_cluster;
+}
+
+// endregion
+
+// region Drivers
+char *fat32_read_file(const fat32_dir_entry *entry) {
+    char *buffer = kalloc(entry->size + 1);
+
+    uint32_t cluster_num = (entry->cluster_entry_high << 16) + entry->cluster_entry_low;
+    uint32_t bytes_read = 0;
+    void *fat_buffer = kalloc(512);
+
+    while (cluster_num < EOF && bytes_read < entry->size) {
+        const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
+
+        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
+        bytes_read += 512;
+
+        const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
+        sd_read_block(fat_sector, fat_buffer);
+        cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
+    }
+
+    kfree(fat_buffer);
+    buffer[entry->size] = '\0';
+    return buffer;
 }
 
 uint32_t fat32_allocate_cluster() {
@@ -304,3 +309,5 @@ void fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint
     fat32_remove_file(entry, parent_directory, parent_sector);
     kfree(buffer);
 }
+
+// endregion
