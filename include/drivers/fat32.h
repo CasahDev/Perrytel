@@ -155,10 +155,6 @@ uint32_t get_current_directory_sector();
 
 void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
 
-int fat32_create_file(char *file_name, char *content);
-
-int fat32_create_directory(const char *directory);
-
 int fat32_remove_file(fat32_dir_entry *entry, void* parent_directory, uint32_t sector);
 
 int fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector);

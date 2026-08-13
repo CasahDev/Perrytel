@@ -157,7 +157,7 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
     out_name[char_count] = '\0';
 }
 
-int fat32_create_file(char *file_name, char *content) {
+int fat32_create_file(const char *file_name, const char *content) {
     const uint32_t global_cluster = fat32_allocate_cluster();
     const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
 
@@ -465,4 +465,6 @@ const struct vfs_driver fat32_driver = {
     .list_dir = fat32_list_dir,
     .path = path,
     .read_file = fat32_read_file,
+    .create_dir = fat32_create_directory,
+    .create_file = fat32_create_file
 };

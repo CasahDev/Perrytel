@@ -90,14 +90,14 @@ void touch(int argc, char **argv) {
 
     char *filename = argv[1];
     char *content = argv[2];
-    fat32_create_file(filename, content);
+    driver.create_file(filename, content);
 }
 
 void mkdir(int argc, char **argv) {
     if (argc < 2) return;
 
     char *dir_name = argv[1];
-    fat32_create_directory(dir_name);
+    driver.create_dir(dir_name);
 }
 
 void cd(int argc, char **argv) {
