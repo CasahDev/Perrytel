@@ -63,21 +63,34 @@ void register_syscall_handler(const uint32_t syscall_id, const syscall_callback_
 }
 
 uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    const char *text = (const char *)arg1;
+    const char *text = (const char *) arg1;
     uart_puts(text);
 
     return 0;
 }
 
 uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    uart_puts("Programme terminé avec le code: ");
-    void *code = kalloc(5);
-    itoa(arg0, code);
-    uart_puts(code);
-    uart_puts("\n");
-
     print_shell();
-
-    kfree(code);
     return 0;
+}
+
+uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    char *input = (char *) arg1;
+    uint64_t count = arg2;
+    uint32_t bytes_read = 0;
+
+    while (bytes_read < count) {
+        int c;
+        while ((c = uart_get_char_async()) == -1) {
+            __asm__ volatile("msr daifclr, #2");
+            __asm volatile("wfe");
+        }
+
+        input[bytes_read] = (char) c;
+        bytes_read++;
+
+        if (c == '\r' || c == '\n') break;
+    }
+
+    return bytes_read;
 }
