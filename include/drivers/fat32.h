@@ -158,4 +158,6 @@ void fat32_create_file(char *file_name, char *content);
 
 void fat32_create_directory(const char *directory);
 
-void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory);
+void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory, uint32_t sector);
+
+void fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector);

@@ -252,8 +252,9 @@ void fat32_create_directory(const char *directory) {
     kfree(parent_directory);
 }
 
-void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory) {
-    uint32_t sector = get_current_directory_sector();
+void fat32_remove_file(fat32_dir_entry *entry, void *parent_directory, uint32_t sector) {
+    if (sector == 0) sector = get_current_directory_sector();
+
     entry->name[0] = DELETED;
     sd_write_block(sector, parent_directory);
 
@@ -273,5 +274,33 @@ void fat32_remove_file(fat32_dir_entry *entry, void* parent_directory) {
         cluster = next_cluster;
     }
 
+    kfree(buffer);
+}
+
+
+void fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint32_t parent_sector) {
+    if (parent_sector == 0) parent_sector = get_current_directory_sector();
+    uint32_t cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+
+    void *buffer = kalloc(512);
+    const uint32_t   lba_sector = starting_data_sector + (cluster - 2) * sectors_per_cluster;
+    sd_read_block(lba_sector, buffer);
+    fat32_dir_entry *entries = buffer;
+
+    for (int i = 0; i < 16; i++) {
+        if (entries[i].name[0] == EMPTY) break;
+
+        if (entries[i].name[0] == DELETED) continue;
+
+        if (entries[i].name[0] == '.' && (entries[i].name[1] == ' ' || entries[i].name[1] == '.')) continue;
+
+        if (entries[i].attributes == DIRECTORY) {
+            fat32_remove_directory(&entries[i], buffer, lba_sector);
+        } else {
+            fat32_remove_file(&entries[i], buffer, lba_sector);
+        }
+    }
+
+    fat32_remove_file(entry, parent_directory, parent_sector);
     kfree(buffer);
 }

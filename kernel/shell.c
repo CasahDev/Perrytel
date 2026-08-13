@@ -19,6 +19,10 @@ void help(int argc, char **argv) {
     uart_puts("ls\r\n");
     uart_puts("cat\r\n");
     uart_puts("touch\r\n");
+    uart_puts("mkdir\r\n");
+    uart_puts("cd\r\n");
+    uart_puts("rm\r\n");
+    uart_puts("rmdir\r\n");
 }
 
 void time_command(int argc, char **argv) {
@@ -32,7 +36,7 @@ void echo(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         uart_puts(argv[i]);
         uart_putc(' ');
-    } 
+    }
 
     uart_putc('\r');
     uart_putc('\n');
@@ -49,7 +53,7 @@ void ls(int argc, char **argv) {
             uart_puts("debug 2");
         }
 
-        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *file_name = kalloc(11);
             fat32_get_name(entry, file_name);
             uart_puts(file_name);
@@ -72,7 +76,7 @@ void cat(int argc, char **argv) {
 
     for (int i = 0; i < 16; i++) {
         const fat32_dir_entry *entry = &buffer[i * 32];
-        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *file_name = kalloc(11);
             fat32_get_name(entry, file_name);
             if (strcmp(file_name, file) != 0) {
@@ -115,10 +119,9 @@ void cd(int argc, char **argv) {
     const char *directory = argv[1];
 
     for (int i = 0; i < 16; i++) {
-
         const fat32_dir_entry *entry = &buffer[i * 32];
 
-        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *dir = kalloc(11);
             fat32_get_name(entry, dir);
 
@@ -143,7 +146,7 @@ void cd(int argc, char **argv) {
                             current_path[c] = '\0';
                         }
                     } else {
-                        if (current_path[strlen(current_path)-1] != '/') {
+                        if (current_path[strlen(current_path) - 1] != '/') {
                             current_path[strlen(current_path)] = '/';
                         }
                         for (uint8_t l = 0; l < strlen(directory); l++) {
@@ -166,7 +169,7 @@ void cd(int argc, char **argv) {
 }
 
 void rm(int argc, char **argv) {
-if (argc != 2) return;
+    if (argc != 2) return;
 
     void *buffer = kalloc(512);
     sd_read_block(get_current_directory_sector(), buffer);
@@ -174,10 +177,9 @@ if (argc != 2) return;
     const char *file_name = argv[1];
 
     for (int i = 0; i < 16; i++) {
-
         fat32_dir_entry *entry = &buffer[i * 32];
 
-        if ((uint8_t)entry->name[0] != EMPTY && (uint8_t)entry->name[0] != DELETED) {
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *file = kalloc(11);
             fat32_get_name(entry, file);
 
@@ -185,7 +187,7 @@ if (argc != 2) return;
                 if (entry->attributes == DIRECTORY) {
                     uart_puts("Impossible de supprimer un dossier");
                 } else {
-                    fat32_remove_file(entry, buffer);
+                    fat32_remove_file(entry, buffer, 0);
                 }
 
                 return;
@@ -198,6 +200,37 @@ if (argc != 2) return;
     uart_puts("\r\n");
 }
 
+void rmdir(int argc, char **argv) {
+    if (argc != 2) return;
+
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+
+    const char *file_name = argv[1];
+
+    for (int i = 0; i < 16; i++) {
+        fat32_dir_entry *entry = &buffer[i * 32];
+
+        if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
+            void *file = kalloc(11);
+            fat32_get_name(entry, file);
+
+            if (strcmp(file, file_name) == 1) {
+                if (entry->attributes == DIRECTORY) {
+                    fat32_remove_directory(entry, buffer, get_current_directory_sector());
+                } else {
+                    uart_puts("Ce n'est pas un dossier !");
+                }
+
+                return;
+            }
+            kfree(file);
+        }
+    }
+
+    kfree(buffer);
+    uart_puts("\r\n");
+}
 
 static Command list[] = {
     {.name = "help", .run = help},
@@ -208,8 +241,11 @@ static Command list[] = {
     {.name = "cat", .run = cat},
     {.name = "cd", .run = cd},
     {.name = "mkdir", .run = mkdir},
-    {.name = "rm", .run = rm}
+    {.name = "touch", .run = touch},
+    {.name = "rm", .run = rm},
+    {.name = "rmdir", .run = rmdir}
 };
+
 void exec(char *command) {
     char *argv[10];
     int argc = strsplit(command, argv, 10);
