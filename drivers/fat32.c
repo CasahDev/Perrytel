@@ -14,6 +14,29 @@ static uint32_t current_directory_cluster = 2;
 
 static char current_path[128] = "/";
 
+// region Protypes
+static void fat32_get_name(const fat32_dir_entry *entry, char *out_name);
+
+static int fat32_read_file(const char *path, char *content, uint32_t max_size);
+
+static uint32_t fat32_allocate_cluster();
+
+static int fat32_create_file(const char *file_name, const char *content);
+
+static int fat32_change_dir(const char *directory_name);
+
+static int fat32_create_directory(const char *directory);
+
+static int fat32_delete_entry_raw(fat32_dir_entry *entry, void *directory_buffer);
+
+static int fat32_remove_file(const char *path);
+
+static int fat32_remove_directory(const char *path);
+
+static int fat32_list_dir(const char *path, char ***out_file_list);
+
+// endregion
+
 void fat32_init(const uint32_t starting_sector, const uint8_t *cluster) {
     const fat32_boot_sector *sector = (const fat32_boot_sector *) cluster;
 
