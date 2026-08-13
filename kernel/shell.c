@@ -9,19 +9,40 @@
 
 struct vfs_driver driver;
 
+void time_command(int argc, char **argv);
+void help(int argc, char **argv);
+void echo(int argc, char **argv);
+void ls(int argc, char **argv);
+void cat(int argc, char **argv);
+void mkdir(int argc, char **argv);
+void cd(int argc, char **argv);
+void touch(int argc, char **argv);
+void rm(int argc, char **argv);
+void rmdir(int argc, char **argv);
+
+static Command list[] = {
+    {.name = "help", .run = help},
+    {.name = "time", .run = time_command},
+    {.name = "echo", .run = echo},
+    {.name = "meminfo", .run = meminfo},
+    {.name = "touch", .run = touch},
+    {.name = "cat", .run = cat},
+    {.name = "ls", .run = ls},
+    {.name = "mkdir", .run = mkdir},
+    {.name = "cd", .run = cd},
+    {.name = "rm", .run = rm},
+    {.name = "rmdir", .run = rmdir}
+};
+
 void help(int argc, char **argv) {
     uart_puts("Voici la liste des commandes disponibles\r\n");
-    uart_puts("help\r\n");
-    uart_puts("time\r\n");
-    uart_puts("echo\r\n");
-    uart_puts("meminfo\r\n");
-    uart_puts("ls\r\n");
-    uart_puts("cat\r\n");
-    uart_puts("touch\r\n");
-    uart_puts("mkdir\r\n");
-    uart_puts("cd\r\n");
-    uart_puts("rm\r\n");
-    uart_puts("rmdir\r\n");
+
+    int command_number = sizeof(list) / sizeof(Command);
+    for (int i = 0; i < command_number; i++) {
+        uart_puts("- ");
+        uart_puts(list[i].name);
+        uart_puts("\r\n");
+    }
 }
 
 void time_command(int argc, char **argv) {
@@ -169,20 +190,6 @@ void rmdir(int argc, char **argv) {
     kfree(buffer);
     uart_puts("\r\n");
 }
-
-static Command list[] = {
-    {.name = "help", .run = help},
-    {.name = "time", .run = time_command},
-    {.name = "echo", .run = echo},
-    {.name = "meminfo", .run = meminfo},
-    {.name = "ls", .run = ls},
-    {.name = "cat", .run = cat},
-    {.name = "cd", .run = cd},
-    {.name = "mkdir", .run = mkdir},
-    {.name = "touch", .run = touch},
-    {.name = "rm", .run = rm},
-    {.name = "rmdir", .run = rmdir}
-};
 
 void init_shell(struct vfs_driver storage_driver) {
     driver = storage_driver;

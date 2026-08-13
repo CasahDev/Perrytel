@@ -389,7 +389,7 @@ static int fat32_change_dir(const char *directory_name) {
 }
 
 
-// TODO: Gérer les LONG_FILE_NAME
+// TODO: Gérer les LONG_FILE_NAME & le passage du path
 int fat32_list_dir(const char *path, char ***out_file_list) {
     void *buffer = kalloc(512);
     char **temp_array = kalloc(128 * sizeof(char *));
