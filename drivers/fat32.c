@@ -12,6 +12,8 @@ static uint32_t sectors_per_cluster;
 static uint32_t root_sector;
 static uint32_t current_directory_cluster = 2;
 
+static char current_path[128] = "/";
+
 void fat32_init(const uint32_t starting_sector, const uint8_t *cluster) {
     const fat32_boot_sector *sector = (const fat32_boot_sector *) cluster;
 
@@ -310,4 +312,86 @@ void fat32_remove_directory(fat32_dir_entry *entry, void *parent_directory, uint
     kfree(buffer);
 }
 
+// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
+static int fat32_change_dir(const char *directory_name) {
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+    uint8_t status = 0;
+
+    const char *directory = directory_name;
+
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+
+        if ((uint8_t) entry->name[0] == EMPTY) break;
+
+        if ((uint8_t) entry->name[0] == DELETED) continue;
+
+        void *dir = kalloc(11);
+        fat32_get_name(entry, dir);
+
+        if (strcmp(dir, directory) != 1) continue;
+
+        if (entry->attributes != DIRECTORY) status = 1;
+
+        uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+        if (target_cluster == 0) {
+            target_cluster = 2;
+            memset(current_path, ' ', 128);
+        }
+
+        if (strcmp(directory, "..") == 1) {
+            uint8_t c = strlen(current_path) - 1;
+            while (current_path[c] != '/' && c > 0) {
+                c--;
+            }
+
+            if (c == 0) {
+                current_path[0] = '/';
+                current_path[1] = '\0';
+            } else {
+                current_path[c] = '\0';
+            }
+        } else {
+            if (current_path[strlen(current_path) - 1] != '/') {
+                current_path[strlen(current_path)] = '/';
+            }
+            for (uint8_t l = 0; l < strlen(directory); l++) {
+                current_path[strlen(current_path)] = directory[l];
+            }
+            current_path[strlen(current_path)] = '\0';
+        }
+
+        set_current_directory(target_cluster);
+
+        kfree(dir);
+    }
+
+    kfree(buffer);
+
+    return status;
+}
+
+static int path(char *out_path) {
+    memset(out_path, ' ', 128);
+    const uint32_t len = strlen(current_path);
+
+    uint32_t i = 0;
+    while (i < len) {
+        out_path[i] = current_path[i];
+        i++;
+    }
+
+    out_path[i] = '\0';
+
+    return 0;
+}
+
 // endregion
+
+
+const struct vfs_driver fat32_driver = {
+    .name = "FAT32",
+    .change_dir = fat32_change_dir,
+    .path = path,
+};
