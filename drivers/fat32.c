@@ -240,6 +240,11 @@ static int fat32_create_file(const char *file_name, const char *content) {
 
 // TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
 static int fat32_change_dir(const char *directory_name) {
+    if (strcmp(directory_name, "/") == true) {
+        set_current_directory(2);
+        return 0;
+    }
+
     void *buffer = kalloc(512);
     sd_read_block(get_current_directory_sector(), buffer);
     uint8_t status = 0;
