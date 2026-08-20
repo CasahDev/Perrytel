@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 EXTRA_CFLAGS="-Iinclude -mgeneral-regs-only"
 ARCH_DIR="arch/aarch64"
@@ -27,7 +27,7 @@ for f in $KERNEL_DIR/*.c; do
     aarch64-linux-gnu-gcc -DAARCH64 $EXTRA_CFLAGS -std=gnu99 -ffreestanding -O2 -Wall -Wextra -c $f -o $BUILD_DIR/$filename.o
 done
 
-for f in $DRIVER_DIR/*.c; do
+for f in $DRIVER_DIR/*/*.c; do
     filename=$(basename "$f" .c)
     aarch64-linux-gnu-gcc -DAARCH64 $EXTRA_CFLAGS -std=gnu99 -ffreestanding -O2 -Wall -Wextra -c $f -o $BUILD_DIR/$filename.o
 done
