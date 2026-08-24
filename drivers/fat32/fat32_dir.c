@@ -3,7 +3,6 @@
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>
-#include <drivers/uart.h>
 
 #include <kernel/memory.h>
 
@@ -33,46 +32,31 @@ static void go_to_root_dir() {
     current_path[0] = '/';
 }
 
-static void change_directory_depth(const char *path) {
-    char p[128];
-    char *p_ptr = p;
-    strcpy(p, path);
-    if (path[0] == '/') {
-        go_to_root_dir();
+static void go_upper_directory() {
+    uint8_t c = strlen(current_path) - 1;
+    while (current_path[c] != '/' && c > 0) {
+        c--;
     }
 
-    char *split_path[16];
-    const int parts = strsplit(p_ptr, split_path, 16, '/');
-
-    for (int i = 0; i < parts; i++) {
-        fat32_change_dir(split_path[i]);
-    }
-}
-
-static void slash_directory_change(const char *directory) {
-    if (directory[0] == '/' && strlen(directory) == 1) {
-        go_to_root_dir();
+    if (c == 0) {
+        current_path[0] = '/';
+        current_path[1] = '\0';
     } else {
-        change_directory_depth(directory);
+        current_path[c] = '\0';
     }
 }
 
-// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
-int fat32_change_dir(const char *directory_name) {
-    char p[128];
-    char *p_ptr = p;
-    strcpy(p, directory_name);
-    char *split_path[16];
-    const int parts = strsplit(p_ptr, split_path, 16, '/');
-    if (directory_name[0] == '/' || parts > 1) {
-        slash_directory_change(directory_name);
+static void add_slash_prefix() {
+    if (current_path[strlen(current_path) - 1] != '/') {
+        current_path[strlen(current_path)] = '/';
+        current_path[strlen(current_path)] = '\0';
     }
+}
 
+static int change_directory_depth(const char *path) {
     void *buffer = kalloc(512);
     sd_read_block(get_current_directory_sector(), buffer);
     uint8_t status = 0;
-
-    const char *directory = directory_name;
 
     for (int i = 0; i < 16; i++) {
         const fat32_dir_entry *entry = &buffer[i * 32];
@@ -81,46 +65,35 @@ int fat32_change_dir(const char *directory_name) {
 
         if ((uint8_t) entry->name[0] == DELETED) continue;
 
+        if (strcmp(path, ".") == 1) continue;
+
         void *dir = kalloc(11);
         fat32_get_name(entry, dir);
 
-        if (strcmp(dir, directory) != 1) continue;
+        if (strcmp(dir, path) != 1) {
+            kfree(dir);
+            continue;
+        }
 
         if (entry->attributes != DIRECTORY) status = 1;
 
-        uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
-        if (target_cluster == 0) {
-            target_cluster = 2;
-            memset(current_path, 0x00, 128);
-            current_path[0] = '/';
-            current_path[1] = '\0';
+
+        if (strcmp(path, "..") == 1) {
+            go_upper_directory();
+            kfree(dir);
+            continue;
         }
 
-        if (strcmp(directory, "..") == 1) {
-            uint8_t c = strlen(current_path) - 1;
-            while (current_path[c] != '/' && c > 0) {
-                c--;
-            }
+        const uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
 
-            if (c == 0) {
-                current_path[0] = '/';
-                current_path[1] = '\0';
-            } else {
-                current_path[c] = '\0';
-            }
-        } else {
-            if (current_path[strlen(current_path) - 1] != '/') {
-                current_path[strlen(current_path)] = '/';
-                current_path[strlen(current_path)] = '\0';
-            }
+        add_slash_prefix();
 
-            uint32_t current_pos = strlen(current_path);
-            for (uint16_t l = 0; l < strlen(directory); l++) {
-                current_path[current_pos] = directory[l];
-                current_pos++;
-            }
-            current_path[current_pos] = '\0';
+        uint32_t current_pos = strlen(current_path);
+        for (uint16_t l = 0; l < strlen(path); l++) {
+            current_path[current_pos] = path[l];
+            current_pos++;
         }
+        current_path[current_pos] = '\0';
 
         set_current_directory(target_cluster);
 
@@ -128,6 +101,28 @@ int fat32_change_dir(const char *directory_name) {
     }
 
     kfree(buffer);
+
+    return status;
+}
+
+// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
+int fat32_change_dir(const char *directory_name) {
+    int status = 0;
+    char p[128];
+    char *p_ptr = p;
+    strcpy(p, directory_name);
+
+    if (directory_name[0] == '/') {
+        go_to_root_dir();
+    }
+
+    char *split_path[16];
+    const int parts = strsplit(p_ptr, split_path, 16, '/');
+
+    for (int i = 0; i < parts; i++) {
+        if (status == 1) break;
+        status = change_directory_depth(split_path[i]);
+    }
 
     return status;
 }
