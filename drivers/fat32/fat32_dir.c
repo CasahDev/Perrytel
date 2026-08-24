@@ -30,6 +30,7 @@ static void go_to_root_dir() {
     set_current_directory(2);
     memset(current_path, 0x00, 128);
     current_path[0] = '/';
+    current_path[1] = '\0';
 }
 
 static void go_upper_directory() {
