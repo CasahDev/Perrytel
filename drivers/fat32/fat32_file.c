@@ -1,4 +1,5 @@
 #include <string.h>
+#include <drivers/uart.h>
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>
@@ -175,13 +176,14 @@ int fat32_remove_file(const char *path) {
             kfree(file);
             continue;
         }
+        kfree(file);
 
         if (entry->attributes == DIRECTORY) {
+            kfree(buffer);
             return 1;
         }
 
         fat32_delete_entry_raw(entry, buffer);
-
         return 0;
     }
 
