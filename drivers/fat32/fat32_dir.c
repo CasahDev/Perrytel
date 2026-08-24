@@ -75,7 +75,12 @@ static int change_directory_depth(const char *path) {
             continue;
         }
 
-        if (entry->attributes != DIRECTORY) status = 1;
+        // Le chemin contient un ficher et pas un dossier
+        if (entry->attributes != DIRECTORY) {
+            status = 1;
+            kfree(dir);
+            break;
+        }
 
 
         if (strcmp(path, "..") == 1) {
