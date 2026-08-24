@@ -53,6 +53,17 @@ static void add_slash_prefix() {
     }
 }
 
+static void add_path(const char *path) {
+    add_slash_prefix();
+
+    uint32_t current_pos = strlen(current_path);
+    for (uint16_t l = 0; l < strlen(path); l++) {
+        current_path[current_pos] = path[l];
+        current_pos++;
+    }
+    current_path[current_pos] = '\0';
+}
+
 static int change_directory_depth(const char *path) {
     void *buffer = kalloc(512);
     sd_read_block(get_current_directory_sector(), buffer);
@@ -91,14 +102,7 @@ static int change_directory_depth(const char *path) {
 
         const uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
 
-        add_slash_prefix();
-
-        uint32_t current_pos = strlen(current_path);
-        for (uint16_t l = 0; l < strlen(path); l++) {
-            current_path[current_pos] = path[l];
-            current_pos++;
-        }
-        current_path[current_pos] = '\0';
+        add_path(path);
 
         set_current_directory(target_cluster);
 
