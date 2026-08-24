@@ -33,33 +33,38 @@ static void go_to_root_dir() {
     current_path[0] = '/';
 }
 
-static void change_from_root_directory(const char *path) {
+static void change_directory_depth(const char *path) {
     char p[128];
     char *p_ptr = p;
     strcpy(p, path);
-    go_to_root_dir();
+    if (path[0] == '/') {
+        go_to_root_dir();
+    }
 
     char *split_path[16];
     const int parts = strsplit(p_ptr, split_path, 16, '/');
 
     for (int i = 0; i < parts; i++) {
-        uart_puts(split_path[i]);
-        uart_puts("\r\n");
         fat32_change_dir(split_path[i]);
     }
 }
 
 static void slash_directory_change(const char *directory) {
-    if (strlen(directory) == 1) {
+    if (directory[0] == '/' && strlen(directory) == 1) {
         go_to_root_dir();
     } else {
-        change_from_root_directory(directory);
+        change_directory_depth(directory);
     }
 }
 
 // TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
 int fat32_change_dir(const char *directory_name) {
-    if (directory_name[0] == '/') {
+    char p[128];
+    char *p_ptr = p;
+    strcpy(p, directory_name);
+    char *split_path[16];
+    const int parts = strsplit(p_ptr, split_path, 16, '/');
+    if (directory_name[0] == '/' || parts > 1) {
         slash_directory_change(directory_name);
     }
 
