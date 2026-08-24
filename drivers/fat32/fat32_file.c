@@ -43,7 +43,7 @@ int fat32_delete_entry_raw(fat32_dir_entry *entry, void *directory_buffer) {
 
     void *file_buffer = kalloc(512);
     while (cluster < EOF) {
-        const uint32_t lba_sector = starting_fat_sector + cluster / 128;
+        const uint32_t lba_sector = get_starting_fat_sector() + cluster / 128;
         sd_read_block(lba_sector, file_buffer);
 
         uint32_t *fat = file_buffer;
@@ -88,12 +88,12 @@ int fat32_read_file(const char *path, char *content, uint32_t max_size) {
                         return 2;
                     }
 
-                    const uint32_t lba_sector = starting_data_sector + (cluster_num - 2) * sectors_per_cluster;
+                    const uint32_t lba_sector = get_starting_data_sector() + (cluster_num - 2) * get_sectors_per_cluster();
 
                     sd_read_block(lba_sector, (uint8_t *) content + bytes_read);
                     bytes_read += 512;
 
-                    const uint32_t fat_sector = starting_fat_sector + cluster_num / 128;
+                    const uint32_t fat_sector = get_starting_fat_sector() + cluster_num / 128;
                     sd_read_block(fat_sector, fat_buffer);
                     cluster_num = ((uint32_t *) fat_buffer)[cluster_num % 128];
                 }
@@ -149,7 +149,7 @@ int fat32_remove_file(const char *path) {
 
 int fat32_create_file(const char *file_name, const char *content) {
     const uint32_t global_cluster = fat32_allocate_cluster();
-    const uint32_t lba_sector = starting_data_sector + (global_cluster - 2) * sectors_per_cluster;
+    const uint32_t lba_sector = get_starting_data_sector() + (global_cluster - 2) * get_sectors_per_cluster();
 
     char *file_content = kalloc(512);
 
