@@ -114,7 +114,6 @@ static int change_directory_depth(const char *path) {
     return status;
 }
 
-// TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
 int fat32_change_dir(const char *directory_name) {
     int status = 0;
     char p[128];
@@ -281,11 +280,12 @@ int fat32_remove_directory(const char *path) {
 }
 
 
-// TODO: Gérer les LONG_FILE_NAME & le passage du path
+// TODO: Gérer les LONG_FILE_NAME
 int fat32_list_dir(const char *path, char ***out_file_list) {
-    const uint32_t orig_cluster = get_current_directory();
+    char orig_path[128];
+    strcpy(orig_path, current_path);
 
-    if (strcmp(path, ""))
+    if (strcmp(path, "") == 0)
         fat32_change_dir(path);
 
     void *buffer = kalloc(512);
@@ -313,6 +313,6 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
     *out_file_list = temp_array;
     kfree(buffer);
 
-    set_current_directory(orig_cluster);
+    fat32_change_dir(orig_path);
     return file_number;
 }
