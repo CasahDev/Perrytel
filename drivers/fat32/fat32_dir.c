@@ -1,16 +1,17 @@
 
 #include <string.h>
 
+#include <drivers/fat32.h>
 #include <drivers/sd.h>
+#include <drivers/uart.h>
 
 #include <kernel/memory.h>
 
-#include "fat32.h"
 #include "fat32_internal.h"
 
 static char current_path[128] = "/";
 
-int path(char *out_path) {
+int get_path(char *out_path) {
     memset(out_path, ' ', 128);
     const uint32_t len = strlen(current_path);
 
@@ -32,36 +33,33 @@ static void go_to_root_dir() {
     current_path[0] = '/';
 }
 
-static void go_to_deeper_directory(const char *path) {
+static void change_from_root_directory(const char *path) {
     char p[128];
     char *p_ptr = p;
     strcpy(p, path);
-    if (p[0] == '/') {
-        // fat32_change_dir("/");
-
-        if (strlen(p) == 1) return;
-
-        p_ptr++;
-    }
+    go_to_root_dir();
 
     char *split_path[16];
-    const int parts = strsplit(p_ptr, split_path, 16);
-    for (int i = 0; i < parts - 1; i++) {
-        // fat32_change_dir(split_path[i]);
+    const int parts = strsplit(p_ptr, split_path, 16, '/');
+
+    for (int i = 0; i < parts; i++) {
+        uart_puts(split_path[i]);
+        uart_puts("\r\n");
+        fat32_change_dir(split_path[i]);
     }
 }
 
 static void slash_directory_change(const char *directory) {
-    if (strlen(current_path) == 1) {
+    if (strlen(directory) == 1) {
         go_to_root_dir();
     } else {
-        go_to_deeper_directory(directory);
+        change_from_root_directory(directory);
     }
 }
 
 // TODO: gérer les changements de dossier à plusieurs étages -> ex: cd home/xxx/Documents
 int fat32_change_dir(const char *directory_name) {
-    if (strcmp(directory_name, "/") == true) {
+    if (directory_name[0] == '/') {
         slash_directory_change(directory_name);
     }
 
@@ -277,7 +275,9 @@ int fat32_remove_directory(const char *path) {
 // TODO: Gérer les LONG_FILE_NAME & le passage du path
 int fat32_list_dir(const char *path, char ***out_file_list) {
     const uint32_t orig_cluster = get_current_directory();
-    go_to_deeper_directory(path);
+
+    if (strcmp(path, ""))
+        fat32_change_dir(path);
 
     void *buffer = kalloc(512);
     char **temp_array = kalloc(128 * sizeof(char *));

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <drivers/fat32.h>
 
 // ##############################################################################################
 // ####################################### ACCESSORS ############################################
@@ -62,4 +63,4 @@ int fat32_remove_directory(const char *path);
 
 int fat32_list_dir(const char *path, char ***out_file_list);
 
-int path(char *out_path);
+int get_path(char *out_path);
