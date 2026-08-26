@@ -1,7 +1,8 @@
-#include <drivers/uart.h>
-#include <kernel/gic.h>
-#include <kernel/exception.h>
 #include <drivers/timer.h>
+#include <drivers/uart.h>
+
+#include <kernel/exception.h>
+#include <kernel/gic.h>
 #include <kernel/sched.h>
 
 void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr) {

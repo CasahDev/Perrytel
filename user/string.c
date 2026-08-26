@@ -63,7 +63,7 @@ void itoa(int n, char *dist) {
     dist[i] = '\0';
 }
 
-int strsplit(char *str, char **argv, int max_args) {
+int strsplit(char *str, char **argv, int max_args, char splitter) {
     bool in_quote = false;
     unsigned long i = 0;
     int argc = 0;
@@ -77,7 +77,7 @@ int strsplit(char *str, char **argv, int max_args) {
             }
             i++;
         }
-        else if (str[i] == ' ' && !in_quote) str[i] = '\0';
+        else if (str[i] == splitter && !in_quote) str[i] = '\0';
         else if(i == 0 || str[i-1] == '\0'){
              argv[argc] = &str[i];
              argc++;

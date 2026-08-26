@@ -64,7 +64,10 @@ void echo(int argc, char **argv) {
 
 void ls(int argc, char **argv) {
     char **files = NULL;
-    const uint32_t count = driver.list_dir("", &files);
+
+    char *path = argc > 1 ? argv[1] : "";
+
+    const uint32_t count = driver.list_dir(path, &files);
 
     for (uint32_t i = 0; i < count; i++) {
         uart_puts(files[i]);
@@ -125,7 +128,7 @@ void init_shell(struct vfs_driver storage_driver) {
 
 void exec(char *command) {
     char *argv[10];
-    int argc = strsplit(command, argv, 10);
+    int argc = strsplit(command, argv, 10, ' ');
 
     int command_number = sizeof(list) / sizeof(Command);
     if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
