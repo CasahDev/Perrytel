@@ -203,11 +203,11 @@ int fat32_create_file(const char *file_name, const char *content) {
 
     sd_write_block(lba_sector, (uint8_t *) file_content);
 
-    void *root_buffer = kalloc(512);
-    sd_read_block(get_current_directory_sector(), root_buffer);
+    void *directory_buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), directory_buffer);
 
     int slot = 0;
-    fat32_dir_entry *entries = (fat32_dir_entry *) root_buffer;
+    fat32_dir_entry *entries = (fat32_dir_entry *) directory_buffer;
     while (slot < 16 && (uint8_t) entries[slot].name[0] != 0x00 && (uint8_t) entries[slot].name[0] != DELETED) {
         slot++;
     }
@@ -238,9 +238,9 @@ int fat32_create_file(const char *file_name, const char *content) {
     entry->cluster_entry_low = global_cluster & 0xFFFF;
     entry->size = strlen(content);
 
-    sd_write_block(get_current_directory_sector(), root_buffer);
+    sd_write_block(get_current_directory_sector(), directory_buffer);
 
-    kfree(root_buffer);
+    kfree(directory_buffer);
 
     kfree(file_content);
 
