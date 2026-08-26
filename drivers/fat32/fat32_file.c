@@ -197,10 +197,7 @@ int fat32_create_file(const char *file_name, const char *content) {
     const uint32_t lba_sector = get_starting_data_sector() + (global_cluster - 2) * get_sectors_per_cluster();
 
     char *file_content = kalloc(512);
-
-    for (int i = 0; i < 512; i++) {
-        file_content[i] = 0x00;
-    }
+    memset(file_content, 0x00, 512);
 
     strcpy(file_content, content);
 
