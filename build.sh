@@ -22,17 +22,17 @@ for f in $ARCH_DIR/*.S; do
     aarch64-linux-gnu-gcc -DAARCH64 -c "$f" -o "$BUILD_DIR/$filename.o"
 done
 
-for f in $KERNEL_DIR/*.c; do
+for f in $(find $KERNEL_DIR -name "*.c"); do
     filename=$(basename "$f" .c)
     aarch64-linux-gnu-gcc -DAARCH64 $EXTRA_CFLAGS -std=gnu99 -ffreestanding -O2 -Wall -Wextra -c $f -o $BUILD_DIR/$filename.o
 done
 
-for f in $DRIVER_DIR/*/*.c; do
+for f in $(find $DRIVER_DIR -name "*.c"); do
     filename=$(basename "$f" .c)
     aarch64-linux-gnu-gcc -DAARCH64 $EXTRA_CFLAGS -std=gnu99 -ffreestanding -O2 -Wall -Wextra -c $f -o $BUILD_DIR/$filename.o
 done
 
-for f in $USER_LIB_DIR/*.c; do
+for f in $(find $USER_LIB_DIR -name "*.c"); do
     filename=$(basename "$f" .c)
     aarch64-linux-gnu-gcc -DAARCH64 $EXTRA_CFLAGS -std=gnu99 -ffreestanding -O2 -Wall -Wextra -c $f -o $BUILD_DIR/$filename.o
 done

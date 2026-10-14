@@ -122,7 +122,7 @@ void rmdir(int argc, char **argv) {
     uint32_t status = driver.remove_dir(argv[1]);
 }
 
-void init_shell(struct vfs_driver storage_driver) {
+void init_shell(const struct vfs_driver storage_driver) {
     driver = storage_driver;
 }
 
