@@ -42,5 +42,9 @@ void printf(char *str) {
 }
 
 void exit(const uint32_t code) {
-    syscall1(EXIT_SYSCALL, code);
+    syscall1(SYS_EXIT, code);
+}
+
+uint64_t open(char *file) {
+    syscall2(SYS_OPEN, (uint64_t) file, 3);
 }
