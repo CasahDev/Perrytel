@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <kernel/vfs.h>
+
 enum
 {
     // The offsets for reach register.
@@ -27,6 +29,8 @@ enum
     MBOX_WRITE   = (MBOX_BASE + 0x20),
     MBOX_READ    = (MBOX_BASE + 0x00)
 };
+
+extern const struct vfs_driver uart_vfs_driver;
 
 void uart_init(int raspi);
 void uart_putc(unsigned char c);

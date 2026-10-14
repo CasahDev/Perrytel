@@ -42,6 +42,20 @@ void uart_set_baudrate(uint32_t baud) {
     mmio_write(MMIO_BASE, UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
 
+const struct vfs_driver uart_vfs_driver = {
+    .file_exists = NULL,
+    .open = NULL,
+    .read_file = NULL,
+    .change_dir = NULL,
+    .create_dir = NULL,
+    .create_file = NULL,
+    .list_dir = NULL,
+    .name = NULL,
+    .path = NULL,
+    .remove_dir = NULL,
+    .remove_file = NULL,
+};
+
 void uart_init(int raspi) {
     switch (raspi) {
         case 2:

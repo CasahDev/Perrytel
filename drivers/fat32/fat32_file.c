@@ -9,7 +9,6 @@
 #include "fat32_internal.h"
 
 
-
 void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
     uint8_t char_count = 0;
     for (int i = 0; i < 8; i++) {
@@ -92,7 +91,7 @@ static uint8_t get_file_content(char *out, const fat32_dir_entry *entry, const u
     return 0;
 }
 
-static void change_dir_and_extract_filename(char *out, char *path) {
+static void change_dir_and_extract_filename(char *out, const char *path) {
     char given_path[128];
     char *given_ptr = given_path;
     strcpy(given_ptr, path);
@@ -112,14 +111,13 @@ static void change_dir_and_extract_filename(char *out, char *path) {
         }
 
         if (c > 0) {
-            path[c] = '\0';
+            given_path[c] = '\0';
         } else {
-            path[0] = '/';
-            path[1] = '\0';
+            given_path[0] = '/';
+            given_path[1] = '\0';
         }
 
-        fat32_change_dir(path);
-
+        fat32_change_dir(given_path);
     }
 }
 
@@ -245,4 +243,89 @@ int fat32_create_file(const char *file_name, const char *content) {
     kfree(file_content);
 
     return 0;
+}
+
+bool fat32_file_exists(const char *path) {
+    char orig_path[128];
+    get_path(orig_path);
+
+    bool exists = false;
+
+    char filename[11];
+    change_dir_and_extract_filename(filename, path);
+
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+        if ((uint8_t) entry->name[0] == EMPTY || (uint8_t) entry->name[0] == DELETED) continue;
+
+        void *file_name = kalloc(11);
+        fat32_get_name(entry, file_name);
+
+        if (strcmp(file_name, filename) == 0) {
+            kfree(file_name);
+            continue;
+        }
+
+        kfree(file_name);
+        exists = true;
+        break;
+    }
+
+    fat32_change_dir(orig_path);
+    kfree(buffer);
+    return exists;
+}
+
+void fat32_open(const char *path, vfs_file *out_file) {
+    char orig_path[128];
+    get_path(orig_path);
+
+    char filename[11];
+    change_dir_and_extract_filename(filename, path);
+
+
+    void *buffer = kalloc(512);
+    sd_read_block(get_current_directory_sector(), buffer);
+    for (int i = 0; i < 16; i++) {
+        const fat32_dir_entry *entry = &buffer[i * 32];
+        if ((uint8_t) entry->name[0] == EMPTY || (uint8_t) entry->name[0] == DELETED) continue;
+
+        void *file_name = kalloc(11);
+        fat32_get_name(entry, file_name);
+
+        if (strcmp(file_name, filename) == 0) {
+            kfree(file_name);
+            continue;
+        }
+
+        out_file->driver = &fat32_driver;
+        out_file->size = entry->size;
+        out_file->private_id = entry->cluster_entry_high << 16 | entry->cluster_entry_low;
+
+        kfree(file_name);
+        break;
+    }
+    kfree(buffer);
+}
+
+uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
+    const uint64_t cluster = file->private_id;
+    const uint64_t base_sector = get_starting_data_sector() + (cluster - 2) * get_sectors_per_cluster();
+    const uint32_t sector_offset = file->offset / 512;
+    const uint32_t relative_offset = file->offset % 512;
+    void *sector_buf = kalloc(512);
+
+    const uint64_t lba_sector = base_sector + sector_offset;
+
+    sd_read_block(lba_sector, sector_buf);
+    buffer[file->offset] = *(char *) sector_buf + relative_offset;
+
+    while (file->offset < file->size && file->offset < count) {
+        sd_read_block(lba_sector, (uint8_t *) buffer + file->offset);
+        file->offset += 512;
+    }
+
+    return file->offset;
 }
