@@ -48,6 +48,7 @@ uint32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint6
 
     fd_list[fd].type = FILE;
     fd_list[fd].offset = 0;
+    fd_list[fd].is_open = false;
 
     active_fs->open(path, &fd_list[fd]);
 
@@ -60,6 +61,6 @@ uint32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint6
     char *buffer = (char *) arg1;
     uint64_t count = arg2;
 
-    vfs_file file = fd_list[fd];
-    return file.driver->read(&file, buffer, count);
+    vfs_file *file = &fd_list[fd];
+    return file->driver->read(file, buffer, count);
 }

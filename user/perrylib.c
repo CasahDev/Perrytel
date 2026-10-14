@@ -34,7 +34,7 @@ uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 #endif
 
 uint64_t readf(int fd, char *out, uint64_t buffer_size) {
-    return syscall3(SYS_READ, fd, (uint64_t) out, (uint64_t) buffer_size);
+    return syscall3(SYS_READ, fd, (uint64_t) out, buffer_size);
 }
 
 void printf(char *str) {
@@ -46,5 +46,5 @@ void exit(const uint32_t code) {
 }
 
 uint64_t open(char *file) {
-    syscall2(SYS_OPEN, (uint64_t) file, 3);
+    return syscall2(SYS_OPEN, (uint64_t) file, 3);
 }
