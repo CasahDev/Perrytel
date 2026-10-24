@@ -313,19 +313,30 @@ void fat32_open(const char *path, vfs_file *out_file) {
 uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
     const uint64_t cluster = file->private_id;
     const uint64_t base_sector = get_starting_data_sector() + (cluster - 2) * get_sectors_per_cluster();
-    const uint32_t sector_offset = file->offset / 512;
-    const uint32_t relative_offset = file->offset % 512;
-    void *sector_buf = kalloc(512);
 
-    const uint64_t lba_sector = base_sector + sector_offset;
 
-    sd_read_block(lba_sector, sector_buf);
-    buffer[file->offset] = *(char *) sector_buf + relative_offset;
+    uint32_t bytes_read = 0;
+    while (file->offset < file->size && bytes_read < count) {
+        uint64_t remaining = file->size - file->offset;
 
-    while (file->offset < file->size && file->offset < count) {
-        sd_read_block(lba_sector, (uint8_t *) buffer + file->offset);
-        file->offset += 512;
+        const uint64_t lba_sector = base_sector + (file->offset / 512);
+        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
+
+        uint32_t chunk;
+        if (remaining > 512) {
+            chunk = 512;
+        }
+        else {
+            chunk = remaining;
+        }
+
+        if (chunk > count - bytes_read) {
+            chunk = count - bytes_read;
+        }
+
+        file->offset += chunk;
+        bytes_read += chunk;
     }
 
-    return file->offset;
+    return bytes_read;
 }

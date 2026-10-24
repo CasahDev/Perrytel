@@ -39,6 +39,7 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_syscall_handler(SYS_WRITE, uart_write);
     register_syscall_handler(SYS_EXIT, sys_exit_handler);
     register_syscall_handler(SYS_OPEN, sys_open);
+    ini
 
     sd_init();
 
