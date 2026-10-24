@@ -48,7 +48,7 @@ uint32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint6
 
     fd_list[fd].type = FILE;
     fd_list[fd].offset = 0;
-    fd_list[fd].is_open = false;
+    fd_list[fd].is_open = true;
 
     active_fs->open(path, &fd_list[fd]);
 
