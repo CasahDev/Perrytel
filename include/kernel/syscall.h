@@ -11,5 +11,6 @@ uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uin
 uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 uint32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
+uint32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 
 void init_fd();
