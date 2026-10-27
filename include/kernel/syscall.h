@@ -1,5 +1,14 @@
 #pragma once
 
+/**
+ * SYS CALL Numbers
+ */
+#define SYS_READ 63
+#define SYS_WRITE 64
+#define SYS_EXIT 93
+#define SYS_OPEN 56
+#define SYS_CLOSE 57
+
 
 typedef int32_t (*syscall_callback_type) (uint32_t, uint64_t, uint64_t, uint64_t);
 

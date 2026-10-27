@@ -2,27 +2,32 @@
 // Created by sacha on 10/08/2026.
 //
 #include <perrylib.h>
+#include <kernel/syscall.h>
 
 
+static uint64_t syscall1(uint32_t syscall, uint64_t arg0) {
 #ifdef AARCH64
-uint64_t syscall1(uint32_t syscall, uint64_t arg0) {
     register uint64_t x8 __asm__("x8") = syscall;
     register uint64_t x0 __asm__("x0") = arg0;
     __asm volatile("svc #0" : "+r" (x0) : "r"(x8) : "memory");
 
     return x0;
+#endif
 }
 
 uint64_t syscall2(uint32_t syscall, uint64_t arg0, uint64_t arg1) {
+#ifdef AARCH64
     register uint64_t x8 __asm__("x8") = syscall;
     register uint64_t x0 __asm__("x0") = arg0;
     register uint64_t x1 __asm__("x1") = arg1;
     __asm volatile("svc #0" : "+r" (x0) : "r"(x8), "r"(x1) : "memory");
 
     return x0;
+#endif
 }
 
 uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+#ifdef AARCH64
     register uint64_t x8 __asm__("x8") = syscall;
     register uint64_t x0 __asm__("x0") = arg0;
     register uint64_t x1 __asm__("x1") = arg1;
@@ -30,8 +35,8 @@ uint64_t syscall3(uint32_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2)
     __asm volatile("svc #0" : "+r" (x0) : "r"(x8), "r"(x1), "r"(x2) : "memory");
 
     return x0;
-}
 #endif
+}
 
 int64_t readf(int fd, char *out, uint64_t buffer_size) {
     return (int32_t) syscall3(SYS_READ, fd, (uint64_t) out, buffer_size);
