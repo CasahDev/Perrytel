@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <perrylib.h>
 
 #include <drivers/sd.h>
 #include <drivers/timer.h>
@@ -40,6 +39,7 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     register_syscall_handler(SYS_WRITE, uart_write);
     register_syscall_handler(SYS_EXIT, sys_exit_handler);
     register_syscall_handler(SYS_OPEN, sys_open);
+    register_syscall_handler(SYS_CLOSE, sys_close);
 
     sd_init();
 

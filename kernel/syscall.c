@@ -12,7 +12,7 @@
 
 syscall_callback_type syscall_handlers[1024];
 
-static uint32_t default_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+static int32_t default_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     uart_puts("System call reçue !\r\n");
     uart_puts(" ID: ");
     uart_put_hex(syscall_id);

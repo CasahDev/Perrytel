@@ -48,3 +48,7 @@ void exit(const uint32_t code) {
 int64_t open(char *file) {
     return (int32_t) syscall2(SYS_OPEN, (uint64_t) file, 3);
 }
+
+int64_t close(const uint64_t fd) {
+    return (int32_t) syscall2(SYS_CLOSE, fd, 0);
+}
