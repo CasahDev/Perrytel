@@ -314,17 +314,19 @@ uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
     const uint64_t cluster = file->private_id;
     const uint64_t base_sector = get_starting_data_sector() + (cluster - 2) * get_sectors_per_cluster();
 
+    uint8_t *temp = kalloc(512);
 
     uint32_t bytes_read = 0;
+    const uint16_t sector_offset = file->offset % 512;
     while (file->offset < file->size && bytes_read < count) {
-        uint64_t remaining = file->size - file->offset;
+        const uint64_t remaining = file->size - file->offset;
 
         const uint64_t lba_sector = base_sector + (file->offset / 512);
-        sd_read_block(lba_sector, (uint8_t *) buffer + bytes_read);
+        sd_read_block(lba_sector, temp);
 
         uint32_t chunk;
-        if (remaining > 512) {
-            chunk = 512;
+        if (remaining > 512 - sector_offset) {
+            chunk = 512 - sector_offset;
         }
         else {
             chunk = remaining;
@@ -334,9 +336,15 @@ uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
             chunk = count - bytes_read;
         }
 
+        for (int i = 0; i < chunk; i++) {
+
+            buffer[bytes_read + i] = (char) temp[sector_offset + i];
+        }
+
         file->offset += chunk;
         bytes_read += chunk;
     }
 
+    kfree(temp);
     return bytes_read;
 }
