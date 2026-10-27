@@ -25,6 +25,7 @@ void init_fd() {
 static uint32_t get_free_fd() {
     uint32_t result = -1;
     uint32_t fd = 0;
+static int32_t get_free_fd() {
     const uint32_t entry_number = sizeof(fd_list) / sizeof(vfs_file);
     while (fd < entry_number) {
         if (!fd_list[fd].is_open) {
@@ -37,7 +38,7 @@ static uint32_t get_free_fd() {
     return result;
 }
 
-uint32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+int32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     const char *path = (char *) arg0;
 
     const uint8_t fd = get_free_fd();
@@ -56,7 +57,7 @@ uint32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint6
     return fd;
 }
 
-uint32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+int32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     uint32_t fd = arg0;
     char *buffer = (char *) arg1;
     uint64_t count = arg2;

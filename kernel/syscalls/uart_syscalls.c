@@ -31,7 +31,7 @@ uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint
 }
 
 
-uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+int32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     const char *text = (const char *) arg1;
     uart_puts(text);
 
