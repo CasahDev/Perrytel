@@ -11,6 +11,6 @@
 
 int32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     kfree(current_user_stack);
-    print_shell();
-    return 0;
+    __asm__ volatile("msr daifclr, #2");
+    run_shell();
 }

@@ -8,6 +8,8 @@
 #include <kernel/shell.h>
 #include <kernel/user.h>
 
+#include <errors.h>
+
 struct vfs_driver driver;
 
 const char bin_folder[6] = "/bin/";
@@ -151,16 +153,20 @@ void exec(char *command) {
 
     if (driver.file_exists(bin)) {
 
+
+
         current_user_stack = kalloc(4096);
 
         void *stack_top = current_user_stack + 4096;
 
         //load file
-        // switch_to_user_mode(, stack_top);
+        int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
+        if (fd == FILE_NOT_FOUND) {
+            uart_puts("Command not found");
+            return;
+        }
+        switch_to_user_mode((void *) 0x200000, stack_top);
     }
-
-
-    uart_puts("Command introuvable\r\n");
 }
 
 void print_shell() {
@@ -179,6 +185,7 @@ void run_shell() {
         __asm volatile("wfi");
         if (is_command_ready()) {
             execute_command();
+
         }
     }
 }
