@@ -13,7 +13,7 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
     uint8_t char_count = 0;
     for (int i = 0; i < 8; i++) {
         if (entry->name[i] != ' ') {
-            out_name[char_count] = entry->name[i];
+            out_name[char_count] = to_lower(entry->name[i]);
             char_count++;
         }
     }
@@ -23,7 +23,7 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
         char_count++;
         for (int i = 0; i < 3; i++) {
             if (entry->name[8 + i] != ' ') {
-                out_name[char_count] = entry->name[8 + i];
+                out_name[char_count] = to_lower(entry->name[8 + i]);
                 char_count++;
             }
         }
