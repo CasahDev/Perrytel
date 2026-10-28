@@ -87,3 +87,10 @@ int strsplit(char *str, char **argv, int max_args, char splitter) {
 
     return argc;
 }
+
+int strcat(char *str, const char *str1, const char *str2) {
+    strcpy(str, str1);
+    strcpy(str + strlen(str1), str2);
+
+    return 0;
+}
