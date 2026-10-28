@@ -21,6 +21,10 @@ char shell_buffer[256];
 volatile int shell_index;
 volatile bool command_ready = false;
 
+bool is_command_ready() {
+    return command_ready;
+}
+
 // Loop <delay> times in a way that the compiler won't optimize away
 static inline void delay(int32_t count) {
     __asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
@@ -151,7 +155,6 @@ void uart_handle_interrupt() {
                 uart_puts("\r\n");
                 shell_buffer[shell_index] = '\0';
                 command_ready = true;
-                execute_command();
             } else if (c == '\b' || c == 0x7F) {
                 rx_buffer[shell_index] = '\0';
                 if (shell_index > 0) {

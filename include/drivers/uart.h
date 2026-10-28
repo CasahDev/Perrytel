@@ -42,4 +42,6 @@ void execute_command(void);
 
 void printf(char *str);
 
+bool is_command_ready();
+
 #endif

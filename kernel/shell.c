@@ -6,8 +6,13 @@
 #include <string.h>
 #include <kernel/memory.h>
 #include <kernel/shell.h>
+#include <kernel/user.h>
 
 struct vfs_driver driver;
+
+const char bin_folder[6] = "/bin/";
+
+void *current_user_stack = 0;
 
 void time_command(int argc, char **argv);
 void help(int argc, char **argv);
@@ -131,10 +136,9 @@ void exec(char *command) {
     int argc = strsplit(command, argv, 10, ' ');
 
     int command_number = sizeof(list) / sizeof(Command);
-    if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
+    if (argc == 0) return;
     for (int i = 0; i < command_number; i++) {
         if (strcmp(argv[0], list[i].name) != 0) {
-            // Magie : on lance la fonction stockée dans la structure !
             list[i].run(argc, argv);
             return; // On a trouvé, on s'arrête
         }
@@ -149,4 +153,16 @@ void print_shell() {
     uart_puts("Perry (");
     uart_puts(path);
     uart_puts(") -> ");
+}
+
+void run_shell() {
+    uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
+    print_shell();
+
+    while (true) {
+        __asm volatile("wfi");
+        if (is_command_ready()) {
+            execute_command();
+        }
+    }
 }
