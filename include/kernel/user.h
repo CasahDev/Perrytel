@@ -1,4 +1,5 @@
 #pragma once
+extern void *current_user_stack;
 
 void user_mode();
 

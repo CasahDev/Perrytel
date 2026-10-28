@@ -144,6 +144,22 @@ void exec(char *command) {
         }
     }
 
+    const char *command_name = argv[0];
+    char bin[64];
+
+    strcat(bin, bin_folder, command_name);
+
+    if (driver.file_exists(bin)) {
+
+        current_user_stack = kalloc(4096);
+
+        void *stack_top = current_user_stack + 4096;
+
+        //load file
+        // switch_to_user_mode(, stack_top);
+    }
+
+
     uart_puts("Command introuvable\r\n");
 }
 
