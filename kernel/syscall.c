@@ -2,19 +2,17 @@
 // Created by sacha on 04/08/2026.
 //
 
+#include "./syscalls/syscall_internal.h"
 
 #include <stdint.h>
 
 #include <drivers/uart.h>
 
-#include <kernel/memory.h>
-#include <kernel/shell.h>
-#include <string.h>
 #include <kernel/syscall.h>
 
 syscall_callback_type syscall_handlers[1024];
 
-static uint32_t default_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+static int32_t default_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
     uart_puts("System call reçue !\r\n");
     uart_puts(" ID: ");
     uart_put_hex(syscall_id);
@@ -60,37 +58,4 @@ syscall_callback_type get_syscall_handler(uint32_t syscall_id) {
 
 void register_syscall_handler(const uint32_t syscall_id, const syscall_callback_type handler) {
     syscall_handlers[syscall_id] = handler;
-}
-
-uint32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    const char *text = (const char *) arg1;
-    uart_puts(text);
-
-    return 0;
-}
-
-uint32_t sys_exit_handler(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    print_shell();
-    return 0;
-}
-
-uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
-    char *input = (char *) arg1;
-    uint64_t count = arg2;
-    uint32_t bytes_read = 0;
-
-    while (bytes_read < count) {
-        int c;
-        while ((c = uart_get_char_async()) == -1) {
-            __asm__ volatile("msr daifclr, #2");
-            __asm volatile("wfe");
-        }
-
-        input[bytes_read] = (char) c;
-        bytes_read++;
-
-        if (c == '\r' || c == '\n') break;
-    }
-
-    return bytes_read;
 }

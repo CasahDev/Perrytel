@@ -87,3 +87,24 @@ int strsplit(char *str, char **argv, int max_args, char splitter) {
 
     return argc;
 }
+
+int strcat(char *str, const char *str1, const char *str2) {
+    strcpy(str, str1);
+    strcpy(str + strlen(str1), str2);
+
+    return 0;
+}
+
+char to_lower(const char c) {
+    if (c < 91 && c > 64) {
+        return (char) ((int) c + 32);
+    }
+
+    return c;
+}
+
+void strlow(char *dest, const char *src) {
+    for (int i = 0; i < strlen(src); i++) {
+        dest[i] = to_lower(src[i]);
+    }
+}

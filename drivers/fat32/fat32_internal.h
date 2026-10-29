@@ -46,6 +46,12 @@ int fat32_remove_file(const char *path);
 
 int fat32_create_file(const char *file_name, const char *content);
 
+bool fat32_file_exists(const char *path);
+
+void fat32_open(const char *path, vfs_file *out_file);
+
+uint64_t fat32_read(vfs_file *file, char *buffer, uint64_t count);
+
 // ##############################################################################################
 // ######################################### ALLOC ##############################################
 // ##############################################################################################

@@ -97,8 +97,13 @@ static int change_directory_depth(const char *path) {
 
         if (strcmp(path, "..") == 1) {
             go_upper_directory();
+
+            uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
+            if (target_cluster == 0) target_cluster = 2;
+            set_current_directory(target_cluster);
+            
             kfree(dir);
-            continue;
+            break;
         }
 
         const uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;

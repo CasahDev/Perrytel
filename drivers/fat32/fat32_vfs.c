@@ -14,5 +14,8 @@ const struct vfs_driver fat32_driver = {
     .create_dir = fat32_create_directory,
     .create_file = fat32_create_file,
     .remove_file = fat32_remove_file,
-    .remove_dir = fat32_remove_directory
+    .remove_dir = fat32_remove_directory,
+    .file_exists = fat32_file_exists,
+    .open = fat32_open,
+    .read = fat32_read,
 };
