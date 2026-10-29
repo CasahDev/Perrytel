@@ -108,3 +108,14 @@ void strlow(char *dest, const char *src) {
         dest[i] = to_lower(src[i]);
     }
 }
+
+int strncmp(const char *str1, const char *str2, const int len) {
+    int i = 0;
+    while (i < len) {
+        if (str1[i] != str2[i]) return str1[i] - str2[i];
+        if (str1[i] == '\0') return 0;
+        i++;
+    }
+
+    return 0;
+}

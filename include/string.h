@@ -16,3 +16,5 @@ int strcat(char *str, const char *str1, const char *str2);
 char to_lower(char c);
 
 void strlow(char *dest, const char *src);
+
+int strncmp(const char *str1, const char *str2, int len);
