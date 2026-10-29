@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-EXTRA_CFLAGS="-Iinclude -mgeneral-regs-only"
+EXTRA_CFLAGS="-Iinclude -mgeneral-regs-only -Idrivers/lwIP/include"
 ARCH_DIR="arch/aarch64"
 KERNEL_DIR="kernel"
 DRIVER_DIR="drivers"
