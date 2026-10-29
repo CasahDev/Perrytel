@@ -119,3 +119,19 @@ int strncmp(const char *str1, const char *str2, const int len) {
 
     return 0;
 }
+
+long strtol(const char *str, char **endptr, int base) {
+    long res = 0;
+    uint32_t i = 0;
+
+    while (str[i] == ' ') i++;
+
+    while ( str[i] >= '0' && str[i] <= '9') {
+        res = res * 10 + (str[i] - '0');
+        i++;
+    }
+
+    if (endptr != 0) *endptr = (char *) str + i;
+
+    return res;
+}
