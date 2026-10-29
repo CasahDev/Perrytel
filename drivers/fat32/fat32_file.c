@@ -96,28 +96,21 @@ static void change_dir_and_extract_filename(char *out, const char *path) {
     char *given_ptr = given_path;
     strcpy(given_ptr, path);
 
+    if (path[0] == '/') {
+        fat32_change_dir("/");
+    }
+
     char *split_path[16];
     const int parts = strsplit(given_ptr, split_path, 16, '/');
 
-    for (int i = 0; i < 11; i++) {
+    for (int i = 0; i < strlen(split_path[parts - 1]); i++) {
         out[i] = split_path[parts - 1][i];
     }
 
     if (parts > 1) {
-        uint32_t c = strlen(path) - 1;
-
-        while (path[c] != '/' && c > 0) {
-            c--;
+        for (int i = 0; i < parts - 1; i++) {
+            fat32_change_dir(split_path[i]);
         }
-
-        if (c > 0) {
-            given_path[c] = '\0';
-        } else {
-            given_path[0] = '/';
-            given_path[1] = '\0';
-        }
-
-        fat32_change_dir(given_path);
     }
 }
 
