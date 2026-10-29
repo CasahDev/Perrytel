@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include <kernel/memory.h>
 
 unsigned long strlen(const char *str);
 
