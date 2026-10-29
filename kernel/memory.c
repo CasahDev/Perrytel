@@ -75,6 +75,32 @@ void memset(void *ptr, const int value, const size_t size) {
     }
 }
 
+char *memmove(void *dest, const void *src, const uint64_t len) {
+    char *d = dest;
+    const char *s = src;
+    if (dest == src) return dest;
+
+    if (len == 0) return dest;
+
+    if (dest < src) {
+        uint64_t i = 0;
+        while (i < len) {
+            d[i] = s[i];
+            i++;
+        }
+    } else {
+        uint64_t i = len - 1;
+        while (i != 0) {
+            d[i] = s[i];
+            i--;
+        }
+    }
+
+    return dest;
+}
+
+
+
 void meminfo(int argc, char **argv) {
     int blocks = 0;
     int free = 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 struct block_meta {
     unsigned int size;
@@ -15,3 +16,5 @@ void kfree(void *ptr);
 void memset(void *ptr, int value, size_t size);
 
 void meminfo(int argc, char **argv);
+
+char *memmove(void *dest, const void *src, uint64_t len);
