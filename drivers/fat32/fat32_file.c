@@ -81,7 +81,6 @@ static uint8_t get_file_content(char *out, const fat32_dir_entry *entry, const u
     }
 
     out[entry->size] = '\0';
-    kfree(file_name);
     kfree(fat_buffer);
 
     return 0;
