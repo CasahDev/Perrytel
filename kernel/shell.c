@@ -152,15 +152,12 @@ void exec(char *command) {
     strcat(bin, bin_folder, command_name);
 
     if (driver.file_exists(bin)) {
-
-
-
         current_user_stack = kalloc(4096);
 
         void *stack_top = current_user_stack + 4096;
 
         //load file
-        int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
+        const int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
         if (fd == FILE_NOT_FOUND) {
             uart_puts("Command not found");
             return;
@@ -178,7 +175,6 @@ void print_shell() {
 }
 
 void run_shell() {
-    uart_puts("Perrytel OS (AArch64) - Kernel Loaded\r\n");
     print_shell();
 
     while (true) {

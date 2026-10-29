@@ -7,6 +7,8 @@
 #include <kernel/mmio.h>
 #include <kernel/shell.h>
 
+#include <string.h>
+
 static uint32_t MMIO_BASE;
 
 volatile unsigned char tx_buffer[1024];
@@ -184,11 +186,12 @@ void uart_handle_interrupt() {
 void execute_command() {
     if (!command_ready) return;
 
-    exec(shell_buffer);
-
     shell_index = 0;
-    command_ready = false;
+    char command[256];
+    strcpy(command, shell_buffer);
     memset(shell_buffer, 0, 256);
+    command_ready = false;
+    exec(command);
 
     print_shell();
 }
