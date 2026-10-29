@@ -1,5 +1,4 @@
 #include <string.h>
-#include <drivers/uart.h>
 
 #include <drivers/fat32.h>
 #include <drivers/sd.h>
@@ -65,13 +64,9 @@ static uint8_t get_file_content(char *out, const fat32_dir_entry *entry, const u
     uint32_t bytes_read = 0;
     void *fat_buffer = kalloc(512);
 
-    void *file_name = kalloc(11);
-    fat32_get_name(entry, file_name);
-
     while (cluster_num < EOF && bytes_read < entry->size) {
         if (bytes_read + 512 > max_size) {
             kfree(fat_buffer);
-            kfree(file_name);
             return 2;
         }
 
@@ -165,6 +160,7 @@ int fat32_remove_file(const char *path) {
         fat32_get_name(entry, file);
         if (strcmp(file, path) == 0) {
             kfree(file);
+            kfree(buffer);
             continue;
         }
         kfree(file);
