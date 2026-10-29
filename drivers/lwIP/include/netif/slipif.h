@@ -43,7 +43,6 @@
 
 #include "lwip/opt.h"
 #include "lwip/netif.h"
-#ifdef QEMU
 
 /** Set this to 1 to start a thread that blocks reading on the serial line
  * (using sio_read()).
@@ -86,5 +85,3 @@ void slipif_received_bytes(struct netif *netif, u8_t *data, u8_t len);
 #endif
 
 #endif /* LWIP_HDR_NETIF_SLIPIF_H */
-
-#endif
