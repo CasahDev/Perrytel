@@ -7,6 +7,8 @@
 #include <kernel/mmio.h>
 #include <kernel/shell.h>
 
+#include <string.h>
+
 static uint32_t MMIO_BASE;
 
 volatile unsigned char tx_buffer[1024];
@@ -20,6 +22,10 @@ volatile uint32_t rx_tail;
 char shell_buffer[256];
 volatile int shell_index;
 volatile bool command_ready = false;
+
+bool is_command_ready() {
+    return command_ready;
+}
 
 // Loop <delay> times in a way that the compiler won't optimize away
 static inline void delay(int32_t count) {
@@ -41,6 +47,20 @@ void uart_set_baudrate(uint32_t baud) {
     mmio_write(MMIO_BASE, UART0_LCRH, (1 << 1) | (1 << 2) | (1 << 4) | (1 << 6));
     mmio_write(MMIO_BASE, UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
+
+const struct vfs_driver uart_vfs_driver = {
+    .file_exists = NULL,
+    .open = NULL,
+    .read_file = NULL,
+    .change_dir = NULL,
+    .create_dir = NULL,
+    .create_file = NULL,
+    .list_dir = NULL,
+    .name = NULL,
+    .path = NULL,
+    .remove_dir = NULL,
+    .remove_file = NULL,
+};
 
 void uart_init(int raspi) {
     switch (raspi) {
@@ -137,7 +157,6 @@ void uart_handle_interrupt() {
                 uart_puts("\r\n");
                 shell_buffer[shell_index] = '\0';
                 command_ready = true;
-                execute_command();
             } else if (c == '\b' || c == 0x7F) {
                 rx_buffer[shell_index] = '\0';
                 if (shell_index > 0) {
@@ -167,11 +186,12 @@ void uart_handle_interrupt() {
 void execute_command() {
     if (!command_ready) return;
 
-    exec(shell_buffer);
-
     shell_index = 0;
-    command_ready = false;
+    char command[256];
+    strcpy(command, shell_buffer);
     memset(shell_buffer, 0, 256);
+    command_ready = false;
+    exec(command);
 
     print_shell();
 }

@@ -14,3 +14,5 @@ void exec(char* command);
 void init_shell(struct vfs_driver driver);
 
 void print_shell();
+
+void run_shell();

@@ -6,8 +6,15 @@
 #include <string.h>
 #include <kernel/memory.h>
 #include <kernel/shell.h>
+#include <kernel/user.h>
+
+#include <errors.h>
 
 struct vfs_driver driver;
+
+const char bin_folder[6] = "/bin/";
+
+void *current_user_stack = 0;
 
 void time_command(int argc, char **argv);
 void help(int argc, char **argv);
@@ -122,7 +129,7 @@ void rmdir(int argc, char **argv) {
     uint32_t status = driver.remove_dir(argv[1]);
 }
 
-void init_shell(struct vfs_driver storage_driver) {
+void init_shell(const struct vfs_driver storage_driver) {
     driver = storage_driver;
 }
 
@@ -131,16 +138,32 @@ void exec(char *command) {
     int argc = strsplit(command, argv, 10, ' ');
 
     int command_number = sizeof(list) / sizeof(Command);
-    if (argc == 0) return; // Sécurité si on a juste tapé sur Entrée
+    if (argc == 0) return;
     for (int i = 0; i < command_number; i++) {
         if (strcmp(argv[0], list[i].name) != 0) {
-            // Magie : on lance la fonction stockée dans la structure !
             list[i].run(argc, argv);
             return; // On a trouvé, on s'arrête
         }
     }
 
-    uart_puts("Command introuvable\r\n");
+    const char *command_name = argv[0];
+    char bin[64];
+
+    strcat(bin, bin_folder, command_name);
+
+    if (driver.file_exists(bin)) {
+        current_user_stack = kalloc(4096);
+
+        void *stack_top = current_user_stack + 4096;
+
+        //load file
+        const int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
+        if (fd == FILE_NOT_FOUND) {
+            uart_puts("Command not found");
+            return;
+        }
+        switch_to_user_mode((void *) 0x200000, stack_top);
+    }
 }
 
 void print_shell() {
@@ -149,4 +172,16 @@ void print_shell() {
     uart_puts("Perry (");
     uart_puts(path);
     uart_puts(") -> ");
+}
+
+void run_shell() {
+    print_shell();
+
+    while (true) {
+        __asm volatile("wfi");
+        if (is_command_ready()) {
+            execute_command();
+
+        }
+    }
 }
