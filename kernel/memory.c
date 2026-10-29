@@ -94,14 +94,16 @@ char *memmove(void *dest, const void *src, const uint64_t len) {
             d[i] = s[i];
             i--;
         }
+
+        d[0] = s[0];
     }
 
     return dest;
 }
 
-int memcmp(const void *s1, const void *s2, const unsigned long￹size) {
+int memcmp(const void *s1, const void *s2, const unsigned size) {
     int i = 0;
-    while (i < long￹size) {
+    while (i < size) {
         if (((uint8_t *) s1)[i] != ((uint8_t *) s2)[i]) return ((uint8_t *) s1)[i] - ((uint8_t *) s2)[i];
         i++;
     }
