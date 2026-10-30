@@ -53,13 +53,13 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 
 #ifdef QEMU
     ip4_addr_t ip;
-    IP4_ADDR(&ip, 192, 168, 1, 253);
+    IP4_ADDR(&ip, 192, 168, 5, 253);
 
     ip4_addr_t mask;
     IP4_ADDR(&mask, 255, 255, 255, 0);
 
     ip4_addr_t gateway;
-    IP4_ADDR(&gateway, 192, 168, 1, 254);
+    IP4_ADDR(&gateway, 192, 168, 5, 254);
 
     int state = 1;
 

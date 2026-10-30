@@ -24,3 +24,7 @@ typedef uint32_t sys_prot_t;
 
 #define LWIP_PLATFORM_DIAG(x) do {} while (0)
 #define LWIP_PLATFORM_ASSERT(x) do {} while (0)
+
+#define LWIP_NO_UNISTD_H 1
+
+typedef int64_t ssize_t;
