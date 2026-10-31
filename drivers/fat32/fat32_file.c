@@ -17,7 +17,8 @@ void fat32_get_name(const fat32_dir_entry *entry, char *out_name) {
         }
     }
 
-    if (entry->name[FAT_NAME_CHARS] != ' ' || entry->name[FAT_NAME_CHARS + 1] != ' ' || entry->name[FAT_NAME_CHARS + 2] != ' ') {
+    if (entry->name[FAT_NAME_CHARS] != ' ' || entry->name[FAT_NAME_CHARS + 1] != ' ' || entry->name[FAT_NAME_CHARS + 2]
+        != ' ') {
         out_name[char_count] = '.';
         char_count++;
         for (int i = 0; i < FAT_EXT_CHARS; i++) {
@@ -98,7 +99,7 @@ static void change_dir_and_extract_filename(char *out, const char *path) {
     char *split_path[16];
     const int parts = strsplit(given_ptr, split_path, 16, '/');
 
-    for (int i = 0; i < strlen(split_path[parts - 1]); i++) {
+    for (unsigned long i = 0; i < strlen(split_path[parts - 1]); i++) {
         out[i] = split_path[parts - 1][i];
     }
 
@@ -118,12 +119,12 @@ int fat32_read_file(const char *path, char *content, const uint32_t max_size) {
     char file[FAT_SHORT_NAME_LEN];
     change_dir_and_extract_filename(file, path);
 
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
 
     sd_read_block(get_current_directory_sector(), buffer);
 
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        const fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+        const fat32_dir_entry *entry = (const fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
         if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *file_name = kalloc(FAT_SHORT_NAME_LEN);
             fat32_get_name(entry, file_name);
@@ -144,11 +145,11 @@ int fat32_read_file(const char *path, char *content, const uint32_t max_size) {
 }
 
 int fat32_remove_file(const char *path) {
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
     sd_read_block(get_current_directory_sector(), buffer);
 
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+        fat32_dir_entry *entry = (fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
         if ((uint8_t) entry->name[0] == EMPTY) {
             kfree(buffer);
             return 2;
@@ -203,7 +204,7 @@ int fat32_create_file(const char *file_name, const char *content) {
 
     memset(entry->name, ' ', FAT_SHORT_NAME_LEN);
 
-    int i = 0;
+    uint32_t i = 0;
     while (i < FAT_NAME_CHARS && file_name[i] != '\0' && file_name[i] != '.') {
         entry->name[i] = file_name[i];
         i++;
@@ -211,7 +212,7 @@ int fat32_create_file(const char *file_name, const char *content) {
 
     if (file_name[i] == '.') i++;
 
-    if (strlen(file_name) > i) {
+    if (strlen(file_name) > (unsigned long) i) {
         for (int j = 0; j < FAT_EXT_CHARS; j++) {
             entry->name[FAT_NAME_CHARS + j] = file_name[i];
             i++;
@@ -243,10 +244,10 @@ bool fat32_file_exists(const char *path) {
     char filename[FAT_SHORT_NAME_LEN];
     change_dir_and_extract_filename(filename, path);
 
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
     sd_read_block(get_current_directory_sector(), buffer);
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        const fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+        const fat32_dir_entry *entry = (const fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
         if ((uint8_t) entry->name[0] == EMPTY || (uint8_t) entry->name[0] == DELETED) continue;
 
         void *file_name = kalloc(FAT_SHORT_NAME_LEN);
@@ -275,10 +276,10 @@ void fat32_open(const char *path, vfs_file *out_file) {
     change_dir_and_extract_filename(filename, path);
 
 
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
     sd_read_block(get_current_directory_sector(), buffer);
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        const fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+        const fat32_dir_entry *entry = (const fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
         if ((uint8_t) entry->name[0] == EMPTY || (uint8_t) entry->name[0] == DELETED) continue;
 
         void *file_name = kalloc(FAT_SHORT_NAME_LEN);
@@ -314,10 +315,9 @@ uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
         sd_read_block(lba_sector, temp);
 
         uint32_t chunk;
-        if (remaining > FAT_SECTOR_SIZE - sector_offset) {
+        if (remaining > (uint64_t) FAT_SECTOR_SIZE - sector_offset) {
             chunk = FAT_SECTOR_SIZE - sector_offset;
-        }
-        else {
+        } else {
             chunk = remaining;
         }
 
@@ -325,8 +325,7 @@ uint64_t fat32_read(vfs_file *file, char *buffer, const uint64_t count) {
             chunk = count - bytes_read;
         }
 
-        for (int i = 0; i < chunk; i++) {
-
+        for (uint32_t i = 0; i < chunk; i++) {
             buffer[bytes_read + i] = (char) temp[sector_offset + i];
         }
 

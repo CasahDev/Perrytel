@@ -1,4 +1,3 @@
-
 #include <string.h>
 
 #include <drivers/fat32.h>
@@ -66,12 +65,12 @@ static void add_path(const char *path) {
 }
 
 static int change_directory_depth(const char *path) {
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
     sd_read_block(get_current_directory_sector(), buffer);
     uint8_t status = 0;
 
-    for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        const fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+    for (uint32_t i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
+        const fat32_dir_entry *entry = (const fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
 
         if ((uint8_t) entry->name[0] == EMPTY) break;
 
@@ -101,7 +100,7 @@ static int change_directory_depth(const char *path) {
             uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
             if (target_cluster == 0) target_cluster = FAT_ROOT_CLUSTER;
             set_current_directory(target_cluster);
-            
+
             kfree(dir);
             break;
         }
@@ -217,14 +216,13 @@ int fat32_create_directory(const char *directory) {
 }
 
 
-
 int fat32_remove_directory(const char *path) {
-    void *directory_buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *directory_buffer = kalloc(FAT_SECTOR_SIZE);
     sd_read_block(get_current_directory_sector(), directory_buffer);
 
 
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        fat32_dir_entry *entry = &directory_buffer[i * FAT_DIR_ENTRY_SIZE];
+        fat32_dir_entry *entry = (fat32_dir_entry *) &directory_buffer[i * FAT_DIR_ENTRY_SIZE];
 
         if ((uint8_t) entry->name[0] == EMPTY) {
             kfree(directory_buffer);
@@ -294,14 +292,14 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
     if (streq(path, "") == 0)
         fat32_change_dir(path);
 
-    void *buffer = kalloc(FAT_SECTOR_SIZE);
+    uint8_t *buffer = kalloc(FAT_SECTOR_SIZE);
     char **temp_array = kalloc(128 * sizeof(char *));
     sd_read_block(get_current_directory_sector(), buffer);
 
     int file_number = 0;
 
     for (int i = 0; i < FAT_DIR_ENTRIES_PER_SECTOR; i++) {
-        const fat32_dir_entry *entry = &buffer[i * FAT_DIR_ENTRY_SIZE];
+        const fat32_dir_entry *entry = (const fat32_dir_entry *) &buffer[i * FAT_DIR_ENTRY_SIZE];
         if ((uint8_t) entry->name[0] == EMPTY) break;
 
         if ((uint8_t) entry->name[0] == DELETED) continue;
