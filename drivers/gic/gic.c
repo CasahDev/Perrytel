@@ -17,7 +17,7 @@ void init_interruption_handlers() {
 void gic_enable_interrupt(const uint32_t irq_id, const uint8_t cpu_target) {
     gicd->ISENABLER[GIC_ISENABLER_INDEX(irq_id)] |= GIC_ISENABLER_BIT(irq_id);
 
-    if (irq_id <= 32) {
+    if (irq_id >= 32) {
         gicd->ITARGETSR[irq_id / 4] |= (cpu_target << ((irq_id % 4) * 8));
     }
 }

@@ -81,7 +81,8 @@
 
 #define SD_WORDS_PER_BLOCK (BLOCK_SIZE / sizeof(uint32_t))
 
-#define EMMC_INT_DATA_DONE (1 << 0)
+#define EMMC_INT_DATA_DONE (1 << 1)
+#define EMMC_INT_CMD_DONE (1 << 0)
 
 #define MBR_PARTITION_TYPE_OFFSET 4
 #define MBR_PARTITION_LBA_OFFSET 8
@@ -94,7 +95,7 @@ const struct vfs_driver *active_fs = NULL;
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
     mmio_write(EMMC, CMDTM, cmdtm);
-    while ((mmio_read(EMMC, INTERRUPT) & EMMC_INT_DATA_DONE) == 0x0) {
+    while ((mmio_read(EMMC, INTERRUPT) & EMMC_INT_CMD_DONE) == 0x0) {
     }
     mmio_write(EMMC, INTERRUPT, 0xFFFFFFFF);
 }
