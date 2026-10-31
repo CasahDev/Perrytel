@@ -20,7 +20,7 @@ volatile uint32_t tail;
  * uart into the buffer variable
  */
 void sio_handler() {
-    while (mmio_read(MMIO_BASE, UART1_LSR_REG) & 0x1) {
+    while (mmio_read(MMIO_BASE, UART1_LSR_REG) & UART1_LSR_DATA_READY) {
         buffer[head] = mmio_read(MMIO_BASE, UART1_IO_REG);
         head = (head + 1) % BUFFER_LEN;
     }
@@ -38,7 +38,7 @@ sio_fd_t sio_open(uint8_t devnum) {
  */
 void sio_send(const uint8_t c, sio_fd_t dev) {
     (void)dev;
-    while (!(mmio_read(MMIO_BASE, UART1_LSR_REG) >> 5 & 0x1)) {}
+    while (!(mmio_read(MMIO_BASE, UART1_LSR_REG) & UART1_LSR_TX_EMPTY)) {}
     mmio_write(MMIO_BASE, UART1_IO_REG, c);
 }
 
