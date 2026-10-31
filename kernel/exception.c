@@ -5,6 +5,8 @@
 #include <kernel/gic.h>
 #include <kernel/sched.h>
 
+#include <kernel/sio-uart.h>
+
 void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr) {
     uart_puts("Invalid exception entry: ");
     uart_put_hex(type);
@@ -51,4 +53,10 @@ void *timer_handler(uint32_t iar, void *sp) {
     timer_reset();
     set_time(get_time() + 1);
     return schedule(sp);
+}
+
+void *aux_uart_handler(uint32_t iar, void *sp) {
+    sio_handler();
+
+    return sp;
 }

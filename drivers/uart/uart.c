@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-static uint32_t MMIO_BASE;
+uint32_t MMIO_BASE;
 
 volatile unsigned char tx_buffer[1024];
 volatile uint32_t tx_head;
@@ -101,6 +101,9 @@ void uart_init(int raspi) {
     uart_set_baudrate(1200);
     mmio_write(MMIO_BASE, UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 6) |
                                       (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10));
+
+    mmio_write(MMIO_BASE, AUX_ENABLES, 1);
+    mmio_write(MMIO_BASE, UART1_IER_REG, 1);
 }
 
 void uart_putc(unsigned char c) {

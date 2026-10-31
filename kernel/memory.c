@@ -4,14 +4,14 @@
 #include <string.h>
 #include <drivers/uart.h>
 
-struct block_meta *heap_start = NULL; 
+struct block_meta *heap_start = NULL;
 
 
 void *kalloc(unsigned int size) {
     if (heap_start == NULL) {
         // On pose notre calque sur l'adresse de __end
-        heap_start = (struct block_meta *)0x300000;
-        
+        heap_start = (struct block_meta *) 0x300000;
+
         // On remplit les informations du Header
         heap_start->size = size;
         heap_start->is_free = false;
@@ -19,17 +19,17 @@ void *kalloc(unsigned int size) {
 
         // On retourne l'adresse de la mémoire UTILISABLE (juste après le Header)         
         // L'astuce (heap_start + 1) en C avance l'adresse de la taille exacte du Header !
-        return (void*)(heap_start + 1);
+        return (void *) (heap_start + 1);
     }
 
     struct block_meta *current = heap_start;
     struct block_meta *last = heap_start; // Va retenir le dernier bloc valide
-    
-    while (current != NULL)
-    {
+
+    while (current != NULL) {
         if (current->is_free && current->size > size) {
             if (current->size > size + sizeof(struct block_meta) + 20) {
-                struct block_meta *next = (struct block_meta*)((uint8_t *) current + sizeof(struct block_meta) + size);
+                struct block_meta *next = (struct block_meta *) (
+                    (uint8_t *) current + sizeof(struct block_meta) + size);
                 next->size = current->size - (size + sizeof(struct block_meta));
                 next->is_free = true;
                 next->next_block = current->next_block;
@@ -46,21 +46,21 @@ void *kalloc(unsigned int size) {
     }
 
     // (uint8_t*) permet de calculer en "octets"
-    struct block_meta *new_block = (struct block_meta *)((uint8_t*)(last + 1) + last->size);
+    struct block_meta *new_block = (struct block_meta *) ((uint8_t *) (last + 1) + last->size);
     new_block->size = size;
     new_block->is_free = false;
     new_block->next_block = NULL;
 
     last->next_block = new_block;
-    return (void*)(new_block + 1);
+    return (void *) (new_block + 1);
 }
 
 void kfree(void *ptr) {
     if (ptr == NULL) return;
 
-    const struct block_meta *header = (struct block_meta *)ptr - 1;
+    const struct block_meta *header = (struct block_meta *) ptr - 1;
 
-    struct block_meta *new_header = (struct block_meta *)ptr - 1;
+    struct block_meta *new_header = (struct block_meta *) ptr - 1;
     new_header->is_free = true;
     while (new_header->next_block != NULL && new_header->next_block->is_free) {
         new_header->size = header->size + header->next_block->size + sizeof(struct block_meta);
@@ -73,6 +73,52 @@ void memset(void *ptr, const int value, const size_t size) {
     for (size_t i = 0; i < size; i++) {
         mem[i] = value;
     }
+}
+
+char *memmove(void *dest, const void *src, const uint64_t len) {
+    char *d = dest;
+    const char *s = src;
+    if (dest == src) return dest;
+
+    if (len == 0) return dest;
+
+    if (dest < src) {
+        uint64_t i = 0;
+        while (i < len) {
+            d[i] = s[i];
+            i++;
+        }
+    } else {
+        uint64_t i = len - 1;
+        while (i != 0) {
+            d[i] = s[i];
+            i--;
+        }
+
+        d[0] = s[0];
+    }
+
+    return dest;
+}
+
+int memcmp(const void *s1, const void *s2, const unsigned size) {
+    int i = 0;
+    while (i < size) {
+        if (((uint8_t *) s1)[i] != ((uint8_t *) s2)[i]) return ((uint8_t *) s1)[i] - ((uint8_t *) s2)[i];
+        i++;
+    }
+
+    return 0;
+}
+
+char *memcpy(void *dest, const void *src, unsigned long size) {
+    char *d = dest;
+    const char *s = src;
+    for (int i = 0; i < size; i++) {
+        d[i] = s[i];
+    }
+
+    return d;
 }
 
 void meminfo(int argc, char **argv) {

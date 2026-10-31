@@ -25,6 +25,9 @@ void gic_init() {
     // Active les interruptions Timer 
     gicd->ISENABLER[0] |= (1 << 27);
 
+    // Enable mini uart interrupts
+    gicd->ISENABLER[3] |= (1 << 29);
+    gicd->ITARGETSR[31] |= (1 << 8);
 
     init_interruption_handlers();
 }

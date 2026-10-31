@@ -37,3 +37,13 @@ void set_time(unsigned long new_time) {
 unsigned long get_time() {
     return time;
 }
+
+uint32_t sys_now() {
+    uint64_t t = read_cntfrq();
+    uint64_t ticks = t / 1000;
+
+    uint64_t val;
+    __asm volatile("mrs %0, cntfrq_el0" : "=r" (val));
+
+    return (uint32_t) val/ticks;
+}

@@ -8,7 +8,13 @@
 #include <kernel/shell.h>
 #include <kernel/user.h>
 
+#include "lwip/netif.h"
+#include "lwip/ip_addr.h"
+
 #include <errors.h>
+
+#include "netif/slipif.h"
+#include "lwip/timeouts.h"
 
 struct vfs_driver driver;
 
@@ -26,6 +32,7 @@ void cd(int argc, char **argv);
 void touch(int argc, char **argv);
 void rm(int argc, char **argv);
 void rmdir(int argc, char **argv);
+void ifconfig(int argc, char **argv);
 
 static Command list[] = {
     {.name = "help", .run = help},
@@ -38,7 +45,8 @@ static Command list[] = {
     {.name = "mkdir", .run = mkdir},
     {.name = "cd", .run = cd},
     {.name = "rm", .run = rm},
-    {.name = "rmdir", .run = rmdir}
+    {.name = "rmdir", .run = rmdir},
+    {.name = "ifconfig", .run = ifconfig}
 };
 
 void help(int argc, char **argv) {
@@ -129,6 +137,43 @@ void rmdir(int argc, char **argv) {
     uint32_t status = driver.remove_dir(argv[1]);
 }
 
+void ifconfig(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
+    struct netif *net = netif_default;
+
+    if (net == 0) {
+        uart_puts("no default interfaces !");
+        return;
+    }
+
+    uart_puts("--------------\n");
+    uart_puts(net->name);
+
+    if (netif_is_up(net)) {
+        uart_puts(" UP");
+    } else {
+        uart_puts(" DOWN");
+    }
+    uart_puts("\r\n");
+
+    char inet[21];
+    strcat(inet, "inet ", ip4addr_ntoa(netif_ip4_addr(net)));
+    uart_puts(inet);
+    uart_puts("\r\n");
+
+    char mask[21];
+    strcat(mask, "mask ", ip4addr_ntoa(netif_ip4_netmask(net)));
+    uart_puts(mask);
+    uart_puts("\r\n");
+
+    char gw[24];
+    strcat(gw, "gateway ", ip4addr_ntoa(netif_ip4_gw(net)));
+    uart_puts(gw);
+    uart_puts("\r\n");
+}
+
 void init_shell(const struct vfs_driver storage_driver) {
     driver = storage_driver;
 }
@@ -181,7 +226,9 @@ void run_shell() {
         __asm volatile("wfi");
         if (is_command_ready()) {
             execute_command();
-
         }
+
+        sys_check_timeouts();
+        if (netif_default != NULL) slipif_poll(netif_default);
     }
 }

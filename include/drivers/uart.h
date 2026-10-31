@@ -27,7 +27,12 @@ enum
     MBOX_BASE    = 0xB880,
     MBOX_STATUS  = (MBOX_BASE + 0x18),
     MBOX_WRITE   = (MBOX_BASE + 0x20),
-    MBOX_READ    = (MBOX_BASE + 0x00)
+    MBOX_READ    = (MBOX_BASE + 0x00),
+    UART1_BASE = 0x215000,
+    AUX_ENABLES = (UART1_BASE + 0x04),
+    UART1_IO_REG = (UART1_BASE + 0x40),
+    UART1_IER_REG = (UART1_BASE + 0x44),
+    UART1_LSR_REG = (UART1_BASE + 0x54),
 };
 
 extern const struct vfs_driver uart_vfs_driver;
