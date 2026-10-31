@@ -6,6 +6,23 @@
 #define GIC 0x400040000
 #endif
 
+#define DISTRIBUTOR_OFFSET 0x1000
+#define CONTROLLER_OFFSET 0x2000
+
+
+#define GIC_ISENABLER_INDEX(irq) (irq / 32)
+#define GIC_ISENABLER_BIT(irq) (1 << (irq % 32))
+#define GIC_ITARGETSR_INDEX(irq) (irq/4)
+#define GIC_ITARGETSR_SHIFT(irq) ((irq % 4) * 8)
+
+enum {
+    // Activation du controller GIC
+    GIC_ENABLE_BIT = 0x01,
+
+    // Demasquage de tous les niveaux de priorité
+    GIC_PMR_UNMASK_ALL = 0xFFFF,
+};
+
 struct gic_distributor
 {
     uint32_t CTLR;     // Control register

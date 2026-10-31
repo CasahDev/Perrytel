@@ -2,10 +2,10 @@
 #include <drivers/uart.h>
 
 enum {
+    TIMER_INT = 27,
     BASE_INTERRUPT_VALUE = 96,
     UART_INT = (BASE_INTERRUPT_VALUE + 57),
     UART_AUX_INT = (BASE_INTERRUPT_VALUE + 29),
-    TIMER_INT = 27,
 };
 
 void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr);
