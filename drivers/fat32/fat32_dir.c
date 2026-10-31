@@ -77,12 +77,12 @@ static int change_directory_depth(const char *path) {
 
         if ((uint8_t) entry->name[0] == DELETED) continue;
 
-        if (strcmp(path, ".") == 1) continue;
+        if (streq(path, ".") == 1) continue;
 
         void *dir = kalloc(FAT_SHORT_NAME_LEN);
         fat32_get_name(entry, dir);
 
-        if (strcmp(dir, path) != 1) {
+        if (streq(dir, path) != 1) {
             kfree(dir);
             continue;
         }
@@ -95,7 +95,7 @@ static int change_directory_depth(const char *path) {
         }
 
 
-        if (strcmp(path, "..") == 1) {
+        if (streq(path, "..") == 1) {
             go_upper_directory();
 
             uint32_t target_cluster = (entry->cluster_entry_high << 16) | entry->cluster_entry_low;
@@ -237,7 +237,7 @@ int fat32_remove_directory(const char *path) {
         void *file_name = kalloc(FAT_SHORT_NAME_LEN);
         fat32_get_name(entry, file_name);
 
-        if (strcmp(file_name, path) == 0) {
+        if (streq(file_name, path) == 0) {
             kfree(file_name);
             continue;
         }
@@ -291,7 +291,7 @@ int fat32_list_dir(const char *path, char ***out_file_list) {
     char orig_path[128];
     strcpy(orig_path, current_path);
 
-    if (strcmp(path, "") == 0)
+    if (streq(path, "") == 0)
         fat32_change_dir(path);
 
     void *buffer = kalloc(FAT_SECTOR_SIZE);

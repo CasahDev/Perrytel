@@ -127,7 +127,7 @@ int fat32_read_file(const char *path, char *content, const uint32_t max_size) {
         if ((uint8_t) entry->name[0] != EMPTY && (uint8_t) entry->name[0] != DELETED) {
             void *file_name = kalloc(FAT_SHORT_NAME_LEN);
             fat32_get_name(entry, file_name);
-            if (strcmp(file_name, file) != 0) {
+            if (streq(file_name, file) != 0) {
                 status = get_file_content(content, entry, max_size);
 
                 kfree(file_name);
@@ -158,7 +158,7 @@ int fat32_remove_file(const char *path) {
 
         void *file = kalloc(FAT_SHORT_NAME_LEN);
         fat32_get_name(entry, file);
-        if (strcmp(file, path) == 0) {
+        if (streq(file, path) == 0) {
             kfree(file);
             kfree(buffer);
             continue;
@@ -252,7 +252,7 @@ bool fat32_file_exists(const char *path) {
         void *file_name = kalloc(FAT_SHORT_NAME_LEN);
         fat32_get_name(entry, file_name);
 
-        if (strcmp(file_name, filename) == 0) {
+        if (streq(file_name, filename) == 0) {
             kfree(file_name);
             continue;
         }
@@ -284,7 +284,7 @@ void fat32_open(const char *path, vfs_file *out_file) {
         void *file_name = kalloc(FAT_SHORT_NAME_LEN);
         fat32_get_name(entry, file_name);
 
-        if (strcmp(file_name, filename) == 0) {
+        if (streq(file_name, filename) == 0) {
             kfree(file_name);
             continue;
         }

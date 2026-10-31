@@ -189,7 +189,7 @@ void exec(char *command) {
     int command_number = sizeof(list) / sizeof(Command);
     if (argc == 0) return;
     for (int i = 0; i < command_number; i++) {
-        if (strcmp(argv[0], list[i].name) != 0) {
+        if (streq(argv[0], list[i].name) != 0) {
             list[i].run(argc, argv);
             return; // On a trouvé, on s'arrête
         }

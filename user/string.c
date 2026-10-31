@@ -9,7 +9,7 @@ unsigned long strlen(const char *str) {
     return i;
 }
 
-bool strcmp(const char *str1, const char *str2) {
+bool streq(const char *str1, const char *str2) {
     unsigned long i = 0;
     while(str1[i] == str2[i]) {
         if (str1[i] == '\0') return true;
