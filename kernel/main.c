@@ -35,9 +35,10 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     mmu_init();
 
     __asm__ volatile("msr daifclr, #2");
-    register_interrupt(153, uart_handler);
+    register_interrupt(UART_INT, uart_handler);
+    register_interrupt(UART_AUX_INT, aux_uart_handler);
     timer_init();
-    register_interrupt(27, timer_handler);
+    register_interrupt(TIMER_INT, timer_handler);
 
     init_syscall_handler();
     init_fd();

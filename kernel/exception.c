@@ -52,3 +52,7 @@ void *timer_handler(uint32_t iar, void *sp) {
     set_time(get_time() + 1);
     return schedule(sp);
 }
+
+void *aux_uart_handler(uint32_t iar, void *sp) {
+    return sp;
+}
