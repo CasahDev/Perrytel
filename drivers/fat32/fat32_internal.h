@@ -2,6 +2,15 @@
 
 #include <drivers/fat32.h>
 
+#define FAT_SECTOR_SIZE 512
+#define FAT_NAME_CHARS 8
+#define FAT_EXT_CHARS 3
+#define FAT_SHORT_NAME_LEN 11
+#define FAT_DIR_ENTRY_SIZE (sizeof(fat32_dir_entry))
+#define FAT_DIR_ENTRIES_PER_SECTOR 16
+#define FAT_ENTRIES_PER_SECTOR 128
+#define FAT_ROOT_CLUSTER 2
+
 // ##############################################################################################
 // ####################################### ACCESSORS ############################################
 // ##############################################################################################
