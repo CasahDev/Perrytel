@@ -167,7 +167,7 @@ void sd_init() {
 
     const uint8_t file_system = buffer[BOOT_FLAG + MBR_PARTITION_TYPE_OFFSET];
     const uint32_t starting_sector = *(uint32_t *) &buffer[BOOT_FLAG + MBR_PARTITION_LBA_OFFSET];
-    const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + MBR_PARTITION_SIZE_OFFSET];
+    // const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + MBR_PARTITION_SIZE_OFFSET];
 
     sd_read_block(starting_sector, buffer);
 
@@ -190,7 +190,7 @@ void sd_read_block(const uint32_t sector, uint8_t *buffer) {
     while ((mmio_read(EMMC, STATUS) & EMMC_STATUS_BUF_READ_ENABLE) == 0) {
     }
 
-    for (int i = 0; i < SD_WORDS_PER_BLOCK; i++) {
+    for (uint32_t i = 0; i < SD_WORDS_PER_BLOCK; i++) {
         const uint32_t data = mmio_read(EMMC, DATA);
         ((uint32_t *) buffer)[i] = data;
     }
@@ -208,7 +208,7 @@ void sd_write_block(uint32_t sector, const uint8_t *buffer) {
     while ((mmio_read(EMMC, STATUS) & EMMC_STATUS_BUF_WRITE_ENABLE) == 0) {
     }
 
-    for (int i = 0; i < SD_WORDS_PER_BLOCK; i++) {
+    for (uint32_t i = 0; i < SD_WORDS_PER_BLOCK; i++) {
         mmio_write(EMMC, DATA, ((uint32_t *)buffer)[i]);
     }
 

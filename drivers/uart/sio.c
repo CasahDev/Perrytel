@@ -28,6 +28,8 @@ void sio_handler() {
 
 
 sio_fd_t sio_open(uint8_t devnum) {
+   (void) devnum;
+
     return (void *) 1;
 }
 

@@ -25,8 +25,8 @@ void init_fd() {
 }
 
 static int32_t get_free_fd() {
-    int32_t result = NO_FD_SPACE_LEFT;
-    int32_t fd = 0;
+    uint32_t result = NO_FD_SPACE_LEFT;
+    uint32_t fd = 0;
     const uint32_t entry_number = sizeof(fd_list) / sizeof(vfs_file);
     while (fd < entry_number) {
         if (!fd_list[fd].is_open) {
@@ -36,10 +36,14 @@ static int32_t get_free_fd() {
         fd++;
     }
 
-    return result;
+    return (int) result;
 }
 
 int32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    (void)syscall_id;
+    (void)arg1;
+    (void)arg2;
+
     const char *path = (char *) arg0;
 
     const int32_t fd = get_free_fd();
@@ -60,6 +64,8 @@ int32_t sys_open(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64
 }
 
 int32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    (void)syscall_id;
+
     uint32_t fd = arg0;
     if (fd >= 32) return FD_OUT_OF_BOUND;
 
@@ -73,6 +79,10 @@ int32_t sys_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64
 }
 
 int32_t sys_close(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    (void)syscall_id;
+    (void)arg1;
+    (void)arg2;
+
     uint32_t fd = arg0;
 
     if (fd >= 32) return FD_OUT_OF_BOUND;

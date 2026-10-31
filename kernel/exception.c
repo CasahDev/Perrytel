@@ -19,7 +19,7 @@ void show_invalid_entry_message(int type, uint32_t esr, uint64_t elr) {
 };
 
 void *irq_handler(void *sp) {
-    volatile struct gic_distributor *gicd = (volatile struct gic_distributor *) (GIC + 0x1000);
+    // volatile struct gic_distributor *gicd = (volatile struct gic_distributor *) (GIC + 0x1000);
     volatile struct gic_controller *gicc = (volatile struct gic_controller *) (GIC + 0x2000);
 
     const uint32_t iar = gicc->IAR;
@@ -44,18 +44,21 @@ void *default_handler(const uint32_t iar, void *sp) {
 
 
 void *uart_handler(uint32_t iar, void *sp) {
+    (void)iar;
     uart_handle_interrupt();
 
     return sp;
 }
 
 void *timer_handler(uint32_t iar, void *sp) {
+    (void)iar;
     timer_reset();
     set_time(get_time() + 1);
     return schedule(sp);
 }
 
 void *aux_uart_handler(uint32_t iar, void *sp) {
+    (void)iar;
     sio_handler();
 
     return sp;

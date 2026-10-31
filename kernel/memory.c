@@ -106,7 +106,7 @@ char *memmove(void *dest, const void *src, const uint64_t len) {
 }
 
 int memcmp(const void *s1, const void *s2, const unsigned size) {
-    int i = 0;
+    unsigned int i = 0;
     while (i < size) {
         if (((uint8_t *) s1)[i] != ((uint8_t *) s2)[i]) return ((uint8_t *) s1)[i] - ((uint8_t *) s2)[i];
         i++;
@@ -118,7 +118,7 @@ int memcmp(const void *s1, const void *s2, const unsigned size) {
 char *memcpy(void *dest, const void *src, unsigned long size) {
     char *d = dest;
     const char *s = src;
-    for (int i = 0; i < size; i++) {
+    for (unsigned long i = 0; i < size; i++) {
         d[i] = s[i];
     }
 
@@ -126,6 +126,9 @@ char *memcpy(void *dest, const void *src, unsigned long size) {
 }
 
 void meminfo(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     int blocks = 0;
     int free = 0;
     int occupied = 0;

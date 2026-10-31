@@ -10,6 +10,9 @@
 
 
 uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    (void)syscall_id;
+    (void)arg0;
+
     char *input = (char *) arg1;
     uint64_t count = arg2;
     uint32_t bytes_read = 0;
@@ -32,6 +35,10 @@ uint32_t uart_read(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint
 
 
 int32_t uart_write(const uint32_t syscall_id, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    (void)syscall_id;
+    (void)arg0;
+    (void)arg2;
+
     const char *text = (const char *) arg1;
     uart_puts(text);
 

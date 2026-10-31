@@ -54,6 +54,9 @@ static Command list[] = {
 };
 
 void help(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     uart_puts("Voici la liste des commandes disponibles\r\n");
 
     int command_number = sizeof(list) / sizeof(Command);
@@ -65,6 +68,9 @@ void help(int argc, char **argv) {
 }
 
 void time_command(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     char current[32];
     itoa(get_time(), current);
     uart_puts(current);
@@ -133,12 +139,15 @@ void rm(int argc, char **argv) {
     if (argc != 2) return;
 
     uint32_t status = driver.remove_file(argv[1]);
+
+    (void)status;
 }
 
 void rmdir(int argc, char **argv) {
     if (argc != 2) return;
 
     uint32_t status = driver.remove_dir(argv[1]);
+    (void)status;
 }
 
 void ifconfig(int argc, char **argv) {
