@@ -20,7 +20,7 @@
 #define RESPONSE_R3 0x02 << 16
 #define NO_RESPONSE 0x00 << 16
 
-
+#define CMD0 (0 << 24 | NO_RESPONSE)
 // Récupère le numéro de série et lui fait générer son RCA
 #define CMD2 (2 << 24 | RESPONSE)
 
@@ -67,6 +67,27 @@
 #define FAT32_LBA 0x0C
 #define FAT32_CHS 0x0B
 
+#define EMMC_IRPT_MASK 0x34
+#define EMMC_IRPT_EN 0x38
+#define EMMC_IRPT_ALL 0xFFFFFFFF
+
+#define SD_OCR_POWER_UP_DONE (1 << 31)
+#define SD_OCR_CARD_CAPACITY (1 << 30)
+
+#define SD_RCA_MASK 0xFFFF0000
+
+#define EMMC_STATUS_BUF_READ_ENABLE (1 << 11)
+#define EMMC_STATUS_BUF_WRITE_ENABLE (1 << 10)
+
+#define SD_WORDS_PER_BLOCK (BLOCK_SIZE / sizeof(uint32_t))
+
+#define EMMC_INT_DATA_DONE (1 << 1)
+#define EMMC_INT_CMD_DONE (1 << 0)
+
+#define MBR_PARTITION_TYPE_OFFSET 4
+#define MBR_PARTITION_LBA_OFFSET 8
+#define MBR_PARTITION_SIZE_OFFSET 12
+
 uint8_t is_sdhc;
 
 const struct vfs_driver *active_fs = NULL;
@@ -74,7 +95,7 @@ const struct vfs_driver *active_fs = NULL;
 static void send_command(const uint32_t cmdtm, const uint32_t args) {
     mmio_write(EMMC, ARG1, args);
     mmio_write(EMMC, CMDTM, cmdtm);
-    while ((mmio_read(EMMC, INTERRUPT) & 0x1) == 0x0) {
+    while ((mmio_read(EMMC, INTERRUPT) & EMMC_INT_CMD_DONE) == 0x0) {
     }
     mmio_write(EMMC, INTERRUPT, 0xFFFFFFFF);
 }
@@ -92,7 +113,7 @@ void sd_init() {
     control1 &= ~(0xFF << 8);
     control1 |= CLOCK_DIVISOR;
     mmio_write(EMMC, CONTROL1_POS, control1);
-    while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {
+    while ((mmio_read(EMMC, CONTROL1_POS) & INTERNAL_CLOCK_STABLE) == 0) {
     }
 
     control1 = mmio_read(EMMC, CONTROL1_POS);
@@ -108,15 +129,15 @@ void sd_init() {
     mmio_write(EMMC, CMDTM, 0x0 << 24);
 
     // Masques d'interruption
-    mmio_write(EMMC, 0x34, 0xFFFFFFFF);
-    mmio_write(EMMC, 0x38, 0xFFFFFFFF);
+    mmio_write(EMMC, EMMC_IRPT_MASK, EMMC_IRPT_ALL);
+    mmio_write(EMMC, EMMC_IRPT_EN, EMMC_IRPT_ALL);
 
     // SEND_IF_COND
     send_command(CMD8, TENSION_TEST);
 
-    send_command(0, NO_ARGS);
+    send_command(CMD0, NO_ARGS);
 
-    while ((mmio_read(EMMC, RESP0) >> 31 & 0x1) == 0x0) {
+    while ((mmio_read(EMMC, RESP0) & SD_OCR_POWER_UP_DONE) == 0x0) {
         send_command(CMD55, NO_ARGS);
 
         send_command(ACMD41, HCS_OCR);
@@ -124,13 +145,13 @@ void sd_init() {
         }
     }
 
-    is_sdhc = (mmio_read(EMMC, RESP0) >> 30 & 0x1);
+    is_sdhc = (mmio_read(EMMC, RESP0) & SD_OCR_CARD_CAPACITY) != 0;
 
     send_command(CMD2, NO_ARGS);
 
     send_command(CMD3, NO_ARGS);
 
-    const uint32_t rca = mmio_read(EMMC, RESP0) & 0xFFFF0000;
+    const uint32_t rca = mmio_read(EMMC, RESP0) & SD_RCA_MASK;
 
     send_command(CMD7, rca);
 
@@ -140,14 +161,14 @@ void sd_init() {
     control1 &= ~(0xFF << 8);
     control1 |= HIGH_CLOCK_DIVISOR;
     mmio_write(EMMC, CONTROL1_POS, control1);
-    while ((mmio_read(EMMC, CONTROL1_POS) >> 1 & 0x1) == 0) {}
+    while ((mmio_read(EMMC, CONTROL1_POS) & INTERNAL_CLOCK_STABLE) == 0) {}
 
-    uint8_t *buffer = kalloc(512);
+    uint8_t *buffer = kalloc(BLOCK_SIZE);
     sd_read_block(0, buffer);
 
-    const uint8_t file_system = buffer[BOOT_FLAG + 4];
-    const uint32_t starting_sector = *(uint32_t *) &buffer[BOOT_FLAG + 8];
-    const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + 12];
+    const uint8_t file_system = buffer[BOOT_FLAG + MBR_PARTITION_TYPE_OFFSET];
+    const uint32_t starting_sector = *(uint32_t *) &buffer[BOOT_FLAG + MBR_PARTITION_LBA_OFFSET];
+    // const uint32_t partition_size = *(uint32_t *) &buffer[BOOT_FLAG + MBR_PARTITION_SIZE_OFFSET];
 
     sd_read_block(starting_sector, buffer);
 
@@ -164,35 +185,35 @@ void sd_init() {
 }
 
 void sd_read_block(const uint32_t sector, uint8_t *buffer) {
-    mmio_write(EMMC, 0x04, (1 << 16) | 512);
-    send_command(CMD17, is_sdhc ? sector : sector * 512);
+    mmio_write(EMMC, BLKSIZECNT, (1 << 16) | BLOCK_SIZE);
+    send_command(CMD17, is_sdhc ? sector : sector * BLOCK_SIZE);
 
-    while ((mmio_read(EMMC, STATUS) >> 11 & 0x1) == 0) {
+    while ((mmio_read(EMMC, STATUS) & EMMC_STATUS_BUF_READ_ENABLE) == 0) {
     }
 
-    for (int i = 0; i < 128; i++) {
+    for (uint32_t i = 0; i < SD_WORDS_PER_BLOCK; i++) {
         const uint32_t data = mmio_read(EMMC, DATA);
         ((uint32_t *) buffer)[i] = data;
     }
 
-    while ((mmio_read(EMMC, INTERRUPT) >> 1 & 0x1) == 0) {
+    while ((mmio_read(EMMC, INTERRUPT) & EMMC_INT_DATA_DONE) == 0) {
     }
-    mmio_write(EMMC, INTERRUPT, 0x2);
+    mmio_write(EMMC, INTERRUPT, EMMC_INT_DATA_DONE);
 }
 
 void sd_write_block(uint32_t sector, const uint8_t *buffer) {
-    mmio_write(EMMC, BLKSIZECNT, 1 << 16 | 512);
+    mmio_write(EMMC, BLKSIZECNT, 1 << 16 | BLOCK_SIZE);
 
-    send_command(CMD24, is_sdhc ? sector : sector * 512);
+    send_command(CMD24, is_sdhc ? sector : sector * BLOCK_SIZE);
 
-    while ((mmio_read(EMMC, STATUS) >> 10 & 0x1) == 0) {
+    while ((mmio_read(EMMC, STATUS) & EMMC_STATUS_BUF_WRITE_ENABLE) == 0) {
     }
 
-    for (int i = 0; i < 128; i++) {
+    for (uint32_t i = 0; i < SD_WORDS_PER_BLOCK; i++) {
         mmio_write(EMMC, DATA, ((uint32_t *)buffer)[i]);
     }
 
-    while ((mmio_read(EMMC, INTERRUPT) >> 1 & 0x1) == 0) {
+    while ((mmio_read(EMMC, INTERRUPT) & EMMC_INT_DATA_DONE) == 0) {
     }
-    mmio_write(EMMC, INTERRUPT, 0x2);
+    mmio_write(EMMC, INTERRUPT, EMMC_INT_DATA_DONE);
 }

@@ -4,13 +4,17 @@
 #include <string.h>
 #include <drivers/uart.h>
 
+
+// Minimal threshold to split a kalloc block
+#define HEAP_MIN_SPLIT_THRESHOLD 20
+
 struct block_meta *heap_start = NULL;
 
 
 void *kalloc(unsigned int size) {
     if (heap_start == NULL) {
         // On pose notre calque sur l'adresse de __end
-        heap_start = (struct block_meta *) 0x300000;
+        heap_start = (struct block_meta *) HEAP_START_ADDRESS;
 
         // On remplit les informations du Header
         heap_start->size = size;
@@ -27,7 +31,7 @@ void *kalloc(unsigned int size) {
 
     while (current != NULL) {
         if (current->is_free && current->size > size) {
-            if (current->size > size + sizeof(struct block_meta) + 20) {
+            if (current->size > size + sizeof(struct block_meta) + HEAP_MIN_SPLIT_THRESHOLD) {
                 struct block_meta *next = (struct block_meta *) (
                     (uint8_t *) current + sizeof(struct block_meta) + size);
                 next->size = current->size - (size + sizeof(struct block_meta));
@@ -102,7 +106,7 @@ char *memmove(void *dest, const void *src, const uint64_t len) {
 }
 
 int memcmp(const void *s1, const void *s2, const unsigned size) {
-    int i = 0;
+    unsigned int i = 0;
     while (i < size) {
         if (((uint8_t *) s1)[i] != ((uint8_t *) s2)[i]) return ((uint8_t *) s1)[i] - ((uint8_t *) s2)[i];
         i++;
@@ -114,7 +118,7 @@ int memcmp(const void *s1, const void *s2, const unsigned size) {
 char *memcpy(void *dest, const void *src, unsigned long size) {
     char *d = dest;
     const char *s = src;
-    for (int i = 0; i < size; i++) {
+    for (unsigned long i = 0; i < size; i++) {
         d[i] = s[i];
     }
 
@@ -122,6 +126,9 @@ char *memcpy(void *dest, const void *src, unsigned long size) {
 }
 
 void meminfo(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     int blocks = 0;
     int free = 0;
     int occupied = 0;

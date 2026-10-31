@@ -1,33 +1,44 @@
 #include <kernel/exception.h>
 #include <kernel/gic.h>
 
-irq_callback_type interruption_handlers[1024];
+#define INTERRUPTION_HANDLERS 1024
+
+irq_callback_type interruption_handlers[INTERRUPTION_HANDLERS];
+
+volatile struct gic_distributor *gicd;
+volatile struct gic_controller *gicc;
 
 void init_interruption_handlers() {
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < INTERRUPTION_HANDLERS; i++) {
         interruption_handlers[i] = default_handler;
     }
 }
 
-void gic_init() {
-    volatile struct gic_distributor *gicd = (struct gic_distributor *) ((char*) GIC + 0x1000);
-    volatile struct gic_controller *gicc = (struct gic_controller *) ((char*) GIC + 0x2000);
+void gic_enable_interrupt(const uint32_t irq_id, const uint8_t cpu_target) {
+    gicd->ISENABLER[GIC_ISENABLER_INDEX(irq_id)] |= GIC_ISENABLER_BIT(irq_id);
 
-    gicd->CTLR = 0x01;
-    gicc->CTLR = 0x01;
+    if (irq_id >= 32) {
+        gicd->ITARGETSR[irq_id / 4] |= (cpu_target << ((irq_id % 4) * 8));
+    }
+}
+
+void gic_init() {
+    gicd = (struct gic_distributor *) ((char *) GIC + DISTRIBUTOR_OFFSET);
+    gicc = (struct gic_controller *) ((char *) GIC + CONTROLLER_OFFSET);
+
+    gicd->CTLR = GIC_ENABLE_BIT;
+    gicc->CTLR = GIC_ENABLE_BIT;
 
     gicc->PMR = 0xFFFF;
-    
+
     // Active les interuptions clavier
-    gicd->ISENABLER[4] |= (1 << 25);
-    gicd->ITARGETSR[38] |= (1 << 8);
+    gic_enable_interrupt(UART_INT, 0x01);
 
     // Active les interruptions Timer 
-    gicd->ISENABLER[0] |= (1 << 27);
+    gic_enable_interrupt(TIMER_INT, 0x01);
 
     // Enable mini uart interrupts
-    gicd->ISENABLER[3] |= (1 << 29);
-    gicd->ITARGETSR[31] |= (1 << 8);
+    gic_enable_interrupt(UART_AUX_INT, 0x01);
 
     init_interruption_handlers();
 }

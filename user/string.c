@@ -9,7 +9,7 @@ unsigned long strlen(const char *str) {
     return i;
 }
 
-bool strcmp(const char *str1, const char *str2) {
+bool streq(const char *str1, const char *str2) {
     unsigned long i = 0;
     while(str1[i] == str2[i]) {
         if (str1[i] == '\0') return true;
@@ -63,23 +63,23 @@ void itoa(int n, char *dist) {
     dist[i] = '\0';
 }
 
-int strsplit(char *str, char **argv, int max_args, char splitter) {
+int strsplit(char *str, char **out, const uint32_t max_args, const char splitter) {
     bool in_quote = false;
-    unsigned long i = 0;
+    uint32_t i = 0;
     int argc = 0;
-    while (str[i] != '\0') {
+    while (str[i] != '\0' && i < max_args) {
         if (str[i] == '"') {
             in_quote = !in_quote;
             str[i] = '\0';
             if (in_quote) {
-                argv[argc] = &str[i + 1];
+                out[argc] = &str[i + 1];
                 argc++;
             }
             i++;
         }
         else if (str[i] == splitter && !in_quote) str[i] = '\0';
         else if(i == 0 || str[i-1] == '\0'){
-             argv[argc] = &str[i];
+             out[argc] = &str[i];
              argc++;
         }
         i++;
@@ -104,7 +104,7 @@ char to_lower(const char c) {
 }
 
 void strlow(char *dest, const char *src) {
-    for (int i = 0; i < strlen(src); i++) {
+    for (uint64_t i = 0; i < strlen(src); i++) {
         dest[i] = to_lower(src[i]);
     }
 }
@@ -121,6 +121,8 @@ int strncmp(const char *str1, const char *str2, const int len) {
 }
 
 long strtol(const char *str, char **endptr, int base) {
+    (void)base;
+
     long res = 0;
     uint32_t i = 0;
 

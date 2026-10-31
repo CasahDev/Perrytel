@@ -16,6 +16,10 @@
 #include "netif/slipif.h"
 #include "lwip/timeouts.h"
 
+// Maximum stack size for the user mode
+#define USER_STACK_SIZE 4096
+
+
 struct vfs_driver driver;
 
 const char bin_folder[6] = "/bin/";
@@ -50,6 +54,9 @@ static Command list[] = {
 };
 
 void help(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     uart_puts("Voici la liste des commandes disponibles\r\n");
 
     int command_number = sizeof(list) / sizeof(Command);
@@ -61,6 +68,9 @@ void help(int argc, char **argv) {
 }
 
 void time_command(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
     char current[32];
     itoa(get_time(), current);
     uart_puts(current);
@@ -129,12 +139,15 @@ void rm(int argc, char **argv) {
     if (argc != 2) return;
 
     uint32_t status = driver.remove_file(argv[1]);
+
+    (void)status;
 }
 
 void rmdir(int argc, char **argv) {
     if (argc != 2) return;
 
     uint32_t status = driver.remove_dir(argv[1]);
+    (void)status;
 }
 
 void ifconfig(int argc, char **argv) {
@@ -185,7 +198,7 @@ void exec(char *command) {
     int command_number = sizeof(list) / sizeof(Command);
     if (argc == 0) return;
     for (int i = 0; i < command_number; i++) {
-        if (strcmp(argv[0], list[i].name) != 0) {
+        if (streq(argv[0], list[i].name) != 0) {
             list[i].run(argc, argv);
             return; // On a trouvé, on s'arrête
         }
@@ -197,17 +210,17 @@ void exec(char *command) {
     strcat(bin, bin_folder, command_name);
 
     if (driver.file_exists(bin)) {
-        current_user_stack = kalloc(4096);
+        current_user_stack = kalloc(USER_STACK_SIZE);
 
-        void *stack_top = current_user_stack + 4096;
+        void *stack_top = current_user_stack + USER_STACK_SIZE;
 
         //load file
-        const int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
+        const int32_t fd = driver.read_file(bin, (char *) USER_PROGRAM_BASE, USER_BIN_MAX_SIZE);
         if (fd == FILE_NOT_FOUND) {
             uart_puts("Command not found");
             return;
         }
-        switch_to_user_mode((void *) 0x200000, stack_top);
+        switch_to_user_mode((void *) USER_PROGRAM_BASE, stack_top);
     }
 }
 
