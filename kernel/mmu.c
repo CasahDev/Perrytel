@@ -17,6 +17,12 @@
 #define DATA_CACHE_ACTIVATION 0x1 << 2
 #define INSTRUCT_CACHE_ACTIVATION 0x1 << 12
 
+// Number of pages in memory
+#define PAGES 512
+
+// Base address for uart memory
+#define UART_PAGE 0xC0000000
+
 
 Table L1;
 Table L2;
@@ -25,10 +31,10 @@ void mmu_init() {
     L1.pages[0] = (uint64_t) &L2 | TABLE_DESC | AP;
 
     // Passe le UART en process DEVICE
-    L1.pages[3] = 0xC0000000 | DESC | SHARABILITY | ACCESS_BIT | DEVICE;
+    L1.pages[3] = UART_PAGE | DESC | SHARABILITY | ACCESS_BIT | DEVICE;
 
 
-    for (int i = 0; i < 512; i++) {
+    for (int i = 0; i < PAGES; i++) {
         L2.pages[i] = i * ((uint64_t) 1 << 21) | DESC | SHARABILITY | ACCESS_BIT;
         if (i > 503) L2.pages[i] |= DEVICE;
         else if (i >= 1) L2.pages[i] |= AP;

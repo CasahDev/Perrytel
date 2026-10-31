@@ -3,6 +3,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
+enum {
+    KERNEL_BASE_ADDRESS = 0x80000,
+
+    // Base heap address for dynamic allocation
+    HEAP_START_ADDRESS = 0x300000,
+
+    // Memory address to load user binaries
+    USER_PROGRAM_BASE = 0x200000,
+
+    // Page size on a frame
+    PAGE_SIZE = 4096,
+
+    // Binary max size
+    USER_BIN_MAX_SIZE = 64000
+};
+
 struct block_meta {
     unsigned int size;
     bool is_free;

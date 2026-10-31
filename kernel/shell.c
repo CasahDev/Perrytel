@@ -16,6 +16,10 @@
 #include "netif/slipif.h"
 #include "lwip/timeouts.h"
 
+// Maximum stack size for the user mode
+#define USER_STACK_SIZE 4096
+
+
 struct vfs_driver driver;
 
 const char bin_folder[6] = "/bin/";
@@ -197,17 +201,17 @@ void exec(char *command) {
     strcat(bin, bin_folder, command_name);
 
     if (driver.file_exists(bin)) {
-        current_user_stack = kalloc(4096);
+        current_user_stack = kalloc(USER_STACK_SIZE);
 
-        void *stack_top = current_user_stack + 4096;
+        void *stack_top = current_user_stack + USER_STACK_SIZE;
 
         //load file
-        const int32_t fd = driver.read_file(bin, (char *) 0x200000, 64000);
+        const int32_t fd = driver.read_file(bin, (char *) USER_PROGRAM_BASE, USER_BIN_MAX_SIZE);
         if (fd == FILE_NOT_FOUND) {
             uart_puts("Command not found");
             return;
         }
-        switch_to_user_mode((void *) 0x200000, stack_top);
+        switch_to_user_mode((void *) USER_PROGRAM_BASE, stack_top);
     }
 }
 

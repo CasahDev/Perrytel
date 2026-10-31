@@ -4,13 +4,17 @@
 #include <string.h>
 #include <drivers/uart.h>
 
+
+// Minimal threshold to split a kalloc block
+#define HEAP_MIN_SPLIT_THRESHOLD 20
+
 struct block_meta *heap_start = NULL;
 
 
 void *kalloc(unsigned int size) {
     if (heap_start == NULL) {
         // On pose notre calque sur l'adresse de __end
-        heap_start = (struct block_meta *) 0x300000;
+        heap_start = (struct block_meta *) HEAP_START_ADDRESS;
 
         // On remplit les informations du Header
         heap_start->size = size;
@@ -27,7 +31,7 @@ void *kalloc(unsigned int size) {
 
     while (current != NULL) {
         if (current->is_free && current->size > size) {
-            if (current->size > size + sizeof(struct block_meta) + 20) {
+            if (current->size > size + sizeof(struct block_meta) + HEAP_MIN_SPLIT_THRESHOLD) {
                 struct block_meta *next = (struct block_meta *) (
                     (uint8_t *) current + sizeof(struct block_meta) + size);
                 next->size = current->size - (size + sizeof(struct block_meta));
