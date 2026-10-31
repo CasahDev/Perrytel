@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 
+extern uint32_t MMIO_BASE;
+
 static void mmio_write(uint32_t start, uint32_t reg, uint32_t data) {
     *(volatile uint32_t*)(uintptr_t)(start + reg) = data;
 }
