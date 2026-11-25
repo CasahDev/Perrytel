@@ -40,4 +40,11 @@ SECTIONS
     __bss_end = .;
     __bss_size = __bss_end - __bss_start;
     __end = .;
+
+    . = ALIGN(0x200000);
+    .user_text :
+    {
+        *(.user_text)
+        build/user_*.o(.text .text.* .rodata .rodata.*)
+    }
 }

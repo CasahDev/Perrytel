@@ -1,9 +1,27 @@
+#pragma once
 #include <stdint.h>
 #ifdef QEMU
 #define GIC 0xFF840000
 #else
 #define GIC 0x400040000
 #endif
+
+#define DISTRIBUTOR_OFFSET 0x1000
+#define CONTROLLER_OFFSET 0x2000
+
+
+#define GIC_ISENABLER_INDEX(irq) (irq / 32)
+#define GIC_ISENABLER_BIT(irq) (1 << (irq % 32))
+#define GIC_ITARGETSR_INDEX(irq) (irq/4)
+#define GIC_ITARGETSR_SHIFT(irq) ((irq % 4) * 8)
+
+enum {
+    // Activation du controller GIC
+    GIC_ENABLE_BIT = 0x01,
+
+    // Demasquage de tous les niveaux de priorité
+    GIC_PMR_UNMASK_ALL = 0xFFFF,
+};
 
 struct gic_distributor
 {
@@ -36,10 +54,10 @@ struct gic_controller
     uint32_t EOIR;
 };
 
-typedef void (*irq_callback_type) (uint32_t);
+typedef void *(*irq_callback_type) (uint32_t, void*);
 
 
 void gic_init();
-void register_interrupt(uint32_t timer_id, irq_callback_type handler);
-irq_callback_type get_interrupt_handler(uint32_t timer_id);
-void uart_handler(uint32_t iar);
+void register_interrupt(uint32_t handler_id, irq_callback_type handler);
+irq_callback_type get_interrupt_handler(uint32_t handler_id);
+void *uart_handler(uint32_t iar, void *sp);
